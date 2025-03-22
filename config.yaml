@@ -1,0 +1,20 @@
+# config.yaml
+
+# Путь к conda-окружению
+env: "/home/lam34/MGE_finder/envs/MGE_finder.yaml"
+
+# Путь к директории с входными геномами
+genomes_dir: "data/genomes"
+
+# Путь к выходной директории
+results_dir: "results"
+
+# Образцы и их форматы (fna или fastq)
+samples:
+  sample1: fna
+  sample2: fastq
+
+# Pfam профили
+pfam_profiles:
+  - "pfam/PF00589.27.hmm"
+  - "pfam/PF22022.2.hmm"

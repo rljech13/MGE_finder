@@ -1,56 +1,60 @@
+import yaml
 import os
-import glob
 
-GENOMES = glob.glob("data/genomes/*")
-GENOME_IDS = [os.path.basename(p).rsplit('.', 1)[0] for p in GENOMES]
+configfile: "config.yaml"
+
+with open(configfile) as f:
+    config = yaml.safe_load(f)
+
+SAMPLES = list(config["samples"].keys())
+GENOMES_DIR = config["genomes_dir"]
+RESULTS_DIR = config["results_dir"]
+ENV = config["env"]
+PFAM = config["pfam_profiles"]
 
 rule all:
     input:
-        expand("results/{sample}/integrase_hits.txt", sample=GENOME_IDS)
+        expand("{results}/{sample}/integrase_hits.txt", results=RESULTS_DIR, sample=SAMPLES)
 
-rule convert_fastq_to_fasta:
+rule prepare_fasta:
     input:
-        "data/genomes/{sample}.fastq"
+        lambda wc: f"{GENOMES_DIR}/{wc.sample}.{config['samples'][wc.sample]}"
     output:
-        "results/{sample}/converted.fna"
-    shell:
-        """
-        seqtk seq -A {input} > {output}
-        """
-
-rule copy_fna:
-    input:
-        "data/genomes/{sample}.fna"
-    output:
-        "results/{sample}/converted.fna"
-    shell:
-        """
-        cp {input} {output}
-        """
+        f"{RESULTS_DIR}" + "/{sample}/genome.fna"
+    conda:
+        ENV
+    script:
+        "scripts/prepare_fasta.py"
 
 rule predict_orfs:
     input:
-        fasta="results/{sample}/converted.fna"
+        f"{RESULTS_DIR}" + "/{sample}/genome.fna"
     output:
-        proteins="results/{sample}/orfs.faa",
-        coords="results/{sample}/orfs.tsv"
+        gff=f"{RESULTS_DIR}" + "/{sample}/orfs.gff",
+        ffn=f"{RESULTS_DIR}" + "/{sample}/orfs.ffn"
     conda:
-        "envs/pyrodigal.yaml"
+        ENV
     script:
         "scripts/predict_orfs.py"
 
-rule hmmsearch_integrases:
+rule translate_orfs:
     input:
-        proteins="results/{sample}/orfs.faa",
-        hmm1="pfam/PF00589.27.hmm",
-        hmm2="pfam/PF22022.2.hmm"
+        fna=f"{RESULTS_DIR}" + "/{sample}/genome.fna",
+        gff=f"{RESULTS_DIR}" + "/{sample}/orfs.gff"
     output:
-        hits="results/{sample}/integrase_hits.txt"
+        faa=f"{RESULTS_DIR}" + "/{sample}/orfs.faa",
+        coords=f"{RESULTS_DIR}" + "/{sample}/orfs.tsv"
     conda:
-        "envs/pyrodigal.yaml"
-    shell:
-        """
-        cat {input.hmm1} {input.hmm2} > results/{wildcards.sample}/combined.hmm
-        hmmpress results/{wildcards.sample}/combined.hmm
-        hmmscan --tblout {output.hits} results/{wildcards.sample}/combined.hmm {input.proteins}
-        """
+        ENV
+    script:
+        "scripts/translate_orfs.py"
+
+rule hmm_search:
+    input:
+        faa=f"{RESULTS_DIR}" + "/{sample}/orfs.faa"
+    output:
+        hits=f"{RESULTS_DIR}" + "/{sample}/integrase_hits.txt"
+    conda:
+        ENV
+    script:
+        "scripts/hmm_search.py"
