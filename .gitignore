@@ -1,0 +1,23 @@
+# Snakemake/Conda
+.snakemake/
+*.snakemake
+*.log
+*.err
+*.out
+*.html
+*.zip
+*.gz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg
+*.egg-info/
+
+# Results
+results/
+
+# Env
+envs/*.lock
+EOF
