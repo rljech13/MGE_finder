@@ -33,4 +33,4 @@ for src in sources:
 with open(snakemake.output[0], "w") as f:
     f.write("done\n")
 
-print(f"[✔] Всего обработано: {len(processed)} образцов.")
+print(f"Всего обработано: {len(processed)} образцов.")

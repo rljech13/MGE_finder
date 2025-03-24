@@ -1,5 +1,5 @@
-env: "/home/lam34/MGE_finder/envs/MGE_finder.yaml"
-
+execution:
+  conda_env: "/home/lam34/miniforge3/envs/MGE_finder"
 # Где искать входные данные
 input_sources:
   - "/home/lam34/thermaceae_genomes/ncbi_dataset/data/"

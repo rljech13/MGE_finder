@@ -7,7 +7,7 @@ import glob
 with open("/home/lam34/MGE_finder/config.yaml") as f:
     config = yaml.safe_load(f)
 
-ENV = config["env"]
+conda_env = config["execution"]["conda_env"]
 PFAM = config["pfam_profiles"]
 GENOMES_DIR = config["genomes_dir"]
 RESULTS_DIR = config["results_dir"]
@@ -27,7 +27,7 @@ rule prepare_fasta:
     output:
         touch("data/genomes/.complete")
     conda:
-        ENV
+        conda_env
     script:
         "scripts/prepare_fastas.py"
 
@@ -38,7 +38,7 @@ rule predict_orfs:
         gff=f"{RESULTS_DIR}" + "/{sample}/orfs.gff",
         ffn=f"{RESULTS_DIR}" + "/{sample}/orfs.ffn"
     conda:
-        ENV
+        conda_env
     script:
         "scripts/predict_orfs.py"
 
@@ -50,7 +50,7 @@ rule translate_orfs:
         faa=f"{RESULTS_DIR}" + "/{sample}/orfs.faa",
         coords=f"{RESULTS_DIR}" + "/{sample}/orfs.tsv"
     conda:
-        ENV
+        conda_env
     script:
         "scripts/translate_orfs.py"
 
@@ -60,6 +60,6 @@ rule hmm_search:
     output:
         hits=f"{RESULTS_DIR}" + "/{sample}/integrase_hits.txt"
     conda:
-        ENV
+        conda_env
     script:
         "scripts/hmm_search.py"
