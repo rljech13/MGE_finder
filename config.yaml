@@ -1,20 +1,17 @@
-# config.yaml
-
-# Путь к conda-окружению
 env: "/home/lam34/MGE_finder/envs/MGE_finder.yaml"
 
-# Путь к директории с входными геномами
+# Где искать входные данные
+input_sources:
+  - "/home/lam34/thermaceae_genomes/ncbi_dataset/data/"
+  - "/home/lam34/Thermus_genomes/assemblies_hybracter_ver2/FINAL_OUTPUT/complete/"
+
+# Куда класть сконвертированные .fna
 genomes_dir: "data/genomes"
 
-# Путь к выходной директории
+# Куда писать результаты пайплайна
 results_dir: "results"
 
-# Образцы и их форматы (fna или fastq)
-samples:
-  sample1: fna
-  sample2: fastq
-
-# Pfam профили
+# Профили Pfam для поиска интеграз
 pfam_profiles:
   - "pfam/PF00589.27.hmm"
   - "pfam/PF22022.2.hmm"
