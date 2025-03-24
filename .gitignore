@@ -15,9 +15,11 @@ __pycache__/
 *.egg
 *.egg-info/
 
-# Results & Data
+# Proj directories
 results/
 data/
+logs/
+
 
 # Env
 envs/*.lock

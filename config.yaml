@@ -1,15 +1,14 @@
+paths:
+  genomes_dir: "data/genomes"
+  results_dir: "results"
+
 execution:
-  conda_env: "/home/lam34/miniforge3/envs/MGE_finder"
+  conda_env: "MGE_finder"
+
 # Где искать входные данные
 input_sources:
   - "/home/lam34/thermaceae_genomes/ncbi_dataset/data/"
   - "/home/lam34/Thermus_genomes/assemblies_hybracter_ver2/FINAL_OUTPUT/complete/"
-
-# Куда класть сконвертированные .fna
-genomes_dir: "data/genomes"
-
-# Куда писать результаты пайплайна
-results_dir: "results"
 
 # Профили Pfam для поиска интеграз
 pfam_profiles:

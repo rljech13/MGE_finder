@@ -1,18 +1,48 @@
-import pyrodigal
+import argparse
+import subprocess
 import os
-from Bio import SeqIO
+from logger import Logger
 
-sample = snakemake.wildcards.sample
-fna_path = snakemake.input[0]
-gff_path = snakemake.output.gff
-ffn_path = snakemake.output.ffn
+log = Logger(name="predict_orfs").get_logger()
 
-gf = pyrodigal.GeneFinder(meta=True)
+def predict_with_prodigal(fna_path, gff_path, ffn_path):
+    os.makedirs(os.path.dirname(gff_path), exist_ok=True)
+    os.makedirs(os.path.dirname(ffn_path), exist_ok=True)
 
-with open(gff_path, "w") as gff_out, open(ffn_path, "w") as ffn_out:
-    for record in SeqIO.parse(fna_path, "fasta"):
-        genes = gf.find_genes(str(record.seq))
-        for i, gene in enumerate(genes):
-            gene_id = f"{record.id}_orf{i+1}"
-            gff_out.write(gene.as_gff(seq_id=record.id, source="pyrodigal", gene_id=gene_id))
-            ffn_out.write(f">{gene_id}\n{gene.nucleotide_sequence()}\n")
+    cmd = [
+        "prodigal",
+        "-i", fna_path,
+        "-o", gff_path,
+        "-a", os.devnull,  # Не сохраняем .faa здесь
+        "-d", ffn_path,
+        "-f", "gff",
+        "-p", "meta"  # режим для метагеномов
+    ]
+
+    log.info(f"Выполняем prodigal:\n{' '.join(cmd)}")
+    try:
+        subprocess.run(cmd, check=True)
+        log.info(f"ORF-аннотация завершена для: {fna_path}")
+        log.info(f"GFF: {gff_path}")
+        log.info(f"FFN: {ffn_path}")
+    except subprocess.CalledProcessError as e:
+        log.error(f"Ошибка при запуске prodigal: {e}")
+        raise
+
+def main():
+    parser = argparse.ArgumentParser(description="Predict ORFs using Prodigal CLI")
+    parser.add_argument("--fna", required=True)
+    parser.add_argument("--gff", required=True)
+    parser.add_argument("--ffn", required=True)
+    args = parser.parse_args()
+
+    predict_with_prodigal(args.fna, args.gff, args.ffn)
+
+if __name__ == "__main__":
+    main()
+else:
+    predict_with_prodigal(
+        snakemake.input.fna,
+        snakemake.output.gff,
+        snakemake.output.ffn
+    )
