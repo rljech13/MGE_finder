@@ -5,28 +5,30 @@ from logger import Logger
 
 log = Logger(name="predict_orfs").get_logger()
 
-def predict_with_prodigal(fna_path, gff_path, ffn_path):
+def predict_with_prodigal(fna_path, gff_path, ffn_path, faa_path):
     os.makedirs(os.path.dirname(gff_path), exist_ok=True)
     os.makedirs(os.path.dirname(ffn_path), exist_ok=True)
+    os.makedirs(os.path.dirname(faa_path), exist_ok=True)
 
     cmd = [
         "prodigal",
         "-i", fna_path,
         "-o", gff_path,
-        "-a", os.devnull,  # Не сохраняем .faa здесь
         "-d", ffn_path,
+        "-a", faa_path,
         "-f", "gff",
-        "-p", "meta"  # режим для метагеномов
+        "-p", "single"  # Используем стандартный режим, т.к. у тебя обычные геномы
     ]
 
-    log.info(f"Выполняем prodigal:\n{' '.join(cmd)}")
+    log.info(f"Запуск prodigal:\n{' '.join(cmd)}")
     try:
         subprocess.run(cmd, check=True)
-        log.info(f"ORF-аннотация завершена для: {fna_path}")
-        log.info(f"GFF: {gff_path}")
-        log.info(f"FFN: {ffn_path}")
+        log.info(f"[✓] ORF-аннотация завершена для: {fna_path}")
+        log.info(f"[→] GFF: {gff_path}")
+        log.info(f"[→] FFN: {ffn_path}")
+        log.info(f"[→] FAA: {faa_path}")
     except subprocess.CalledProcessError as e:
-        log.error(f"Ошибка при запуске prodigal: {e}")
+        log.error(f"[✗] Ошибка при запуске prodigal: {e}")
         raise
 
 def main():
@@ -34,9 +36,10 @@ def main():
     parser.add_argument("--fna", required=True)
     parser.add_argument("--gff", required=True)
     parser.add_argument("--ffn", required=True)
+    parser.add_argument("--faa", required=True)
     args = parser.parse_args()
 
-    predict_with_prodigal(args.fna, args.gff, args.ffn)
+    predict_with_prodigal(args.fna, args.gff, args.ffn, args.faa)
 
 if __name__ == "__main__":
     main()
@@ -44,5 +47,6 @@ else:
     predict_with_prodigal(
         snakemake.input.fna,
         snakemake.output.gff,
-        snakemake.output.ffn
+        snakemake.output.ffn,
+        snakemake.output.faa
     )

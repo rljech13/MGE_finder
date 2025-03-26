@@ -20,6 +20,7 @@ results/
 data/
 logs/
 
+all_integrases_summary.tsv
 
 # Env
 envs/*.lock
