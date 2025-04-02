@@ -1,16 +1,25 @@
+# Here we state the names of directories 
 paths:
   genomes_dir: "data/genomes"
   results_dir: "results"
 
+# Here we define the name of conda envs used
 execution:
   conda_env: "MGE_finder"
 
-# Где искать входные данные
+# Directories where input files are located ! Change it for your own paths; Below you can see the example
 input_sources:
   - "/home/lam34/thermaceae_genomes/ncbi_dataset/data/"
   - "/home/lam34/Thermus_genomes/assemblies_hybracter_ver2/FINAL_OUTPUT/complete/"
 
-# Профили Pfam для поиска интеграз
+# Customizable file patterns for input files ! 
+# If you don't want to specify the naming pattern - it would be specified by default 
+# And you can find mapings in the log file of prepare_fasta step then
+# Right now under construction!
+ncbi_pattern: "*_genomic.fna"              
+hybracter_pattern: "barcode*.fastq_final.fasta"
+
+# Pfam profiles for integrase search; NB: you can add and use your own profiles for integrases
 pfam_profiles:
   - "/home/lam34/MGE_finder/pfam/PF00589.hmm"
   - "/home/lam34/MGE_finder/pfam/PF22022.hmm"
