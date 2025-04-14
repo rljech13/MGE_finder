@@ -47,6 +47,7 @@ conda activate MGE_finder
 bash run.sh
 
 Optional flags:
+
 	•	--dry-run or -n: preview steps without running them
 	•	--unlock: unlock the working directory after interruption
 	•	--force: force re-execution of rules
