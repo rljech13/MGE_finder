@@ -1,11 +1,11 @@
-MGE Finder: A Snakemake Pipeline for Mobile Genetic Element Discovery
+## MGE Finder: A Snakemake Pipeline for Mobile Genetic Element Discovery
 
 MGE Finder is a modular and extensible Snakemake pipeline for detecting Mobile Genetic Elements (MGEs), such as integrases near tRNAs, and annotating their genomic context. It integrates ORF prediction, HMM-based domain search, tRNA detection, BLAST-based boundary detection, and GenBank annotation.
 
 ⸻
 
-Project Structure
-
+### Project Structure
+```
 MGE_finder/
 ├── config.yaml                  # Main configuration file
 ├── Snakefile                    # Snakemake pipeline
@@ -20,20 +20,20 @@ MGE_finder/
 │   └── annotate_and_orient_mge.py
 ├── results/                     # All output results are stored here
 └── run.sh                       # Example script to launch the pipeline
-
+```
 
 
 ⸻
 
-Installation
-	1.	Make sure you have conda or mamba installed.
-	2.	Create the environment:
+### Installation
 
-```bash
+1. Make sure you have conda or mamba installed.
+2. Create the environment:
+
+```
 mamba env create -f envs/MGE_finder.yaml
 ```
-
-	3.	Activate the environment:
+3. Activate the environment:
 
 ```bash
 conda activate MGE_finder
@@ -42,7 +42,7 @@ conda activate MGE_finder
 
 ⸻
 
-Running the Pipeline
+### Running the Pipeline
 
 bash run.sh
 
@@ -129,10 +129,10 @@ For each genome sample, the pipeline produces:
 ⸻
 
 TODO / Future Features
-	-[]	Add plots/stats for integrase and MGE counts
-	-[]	Enable large-scale comparative analysis across genomes
-	-[]	Optional MCAPP-compatible output
-	-[]	Docker/Singularity container for full reproducibility
+	-	Add plots/stats for integrase and MGE counts
+	-	Enable large-scale comparative analysis across genomes
+	-	Optional MCAPP-compatible output
+	-	Docker/Singularity container for full reproducibility
 
 ⸻
 
