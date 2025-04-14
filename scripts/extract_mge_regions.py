@@ -16,11 +16,8 @@ def parse_blast(blast_file):
     integrase_id, contig, hit_start, hit_end, pident, length, evalue, bitscore.
     If the file is empty, an empty DataFrame with the specified columns is returned.
 
-    Args:
-        blast_file (str): Path to the BLAST TSV file.
-
     Returns:
-        pd.DataFrame: DataFrame containing the BLAST data.
+        pd.DataFrame: DataFrame containing the best hit per integrase_id.
     """
     if os.stat(blast_file).st_size == 0:
         logger.warning(f"BLAST file {blast_file} is empty. Creating an empty DataFrame.")
@@ -30,9 +27,15 @@ def parse_blast(blast_file):
     if df.empty:
         logger.warning(f"BLAST file {blast_file} contains no data.")
     else:
-        logger.debug("Parsed BLAST DataFrame:")
+        logger.debug("Parsed BLAST DataFrame before filtering:")
         logger.debug(df.head().to_string())
-    return df
+
+    df_best = df.sort_values("bitscore", ascending=False).drop_duplicates("integrase_id", keep="first")
+
+    logger.debug("BLAST DataFrame after keeping best hits per integrase_id:")
+    logger.debug(df_best.head().to_string())
+
+    return df_best
 
 
 def parse_trna(trna_file):
@@ -63,6 +66,28 @@ def parse_trna(trna_file):
         logger.debug("Parsed tRNA DataFrame:")
         logger.debug(df.head().to_string())
     return df
+
+
+def filter_closest_trna(trna_df):
+    """Filter the closest tRNA to each integrase based on absolute distance.
+
+    This function finds, for each integrase_id, the tRNA with the smallest absolute
+    distance value. If multiple tRNAs exist for the same integrase, only the closest
+    one is retained.
+
+    Args:
+        trna_df (pd.DataFrame): DataFrame containing tRNA data with a 'distance' column.
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame with only one closest tRNA per integrase_id.
+    """
+    if trna_df.empty:
+        return trna_df
+    trna_df = trna_df.copy()
+    trna_df['abs_distance'] = trna_df['distance'].abs()
+    trna_df = trna_df.sort_values('abs_distance').drop_duplicates('integrase_id', keep='first')
+    trna_df = trna_df.drop(columns='abs_distance')
+    return trna_df
 
 
 def build_region_data(blast_df, trna_df):
@@ -173,6 +198,7 @@ def main():
     
     blast_df = parse_blast(args.blast)
     trna_df = parse_trna(args.trna)
+    trna_df = filter_closest_trna(trna_df)
     region_df = build_region_data(blast_df, trna_df)
     extract_regions(args.fna, region_df, args.out_fa)
 

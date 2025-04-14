@@ -32,7 +32,10 @@ rule all:
         expand("{results}/{sample}/integrase_trna.tsv", results=RESULTS_DIR, sample=SAMPLES),
         expand("{results}/{sample}/mge_query.fa", results=RESULTS_DIR, sample=SAMPLES),
         expand("{results}/{sample}/mge_blast.tsv", results=RESULTS_DIR, sample=SAMPLES),
-        expand("{results}/{sample}/mge_region.fa", results=RESULTS_DIR, sample=SAMPLES)
+        expand("{results}/{sample}/mge_region.fa", results=RESULTS_DIR, sample=SAMPLES),
+        expand("{results}/{sample}/mge_annotated.gbk", results=RESULTS_DIR, sample=SAMPLES),
+        expand("{results}/{sample}/attachment_sites.tsv", results=RESULTS_DIR, sample=SAMPLES)
+
 
 rule prepare_fasta:
     output:
@@ -171,4 +174,28 @@ rule extract_mge_region:
     shell:
         """
         python scripts/extract_mge_regions.py --fna {input.fna} --blast {input.blast} --trna {input.trna} --out_fa {output.mge_fa} > {log} 2>&1
+        """
+
+rule annotate_mge:
+    input:
+        fasta=os.path.join(RESULTS_DIR, "{sample}", "mge_region.fa"),
+        trna=os.path.join(RESULTS_DIR, "{sample}", "mge_query.fa"),
+        orf=os.path.join(RESULTS_DIR, "{sample}", "integrase_hits_summary.tsv"),
+        blast=os.path.join(RESULTS_DIR, "{sample}", "mge_blast.tsv")
+    output:
+        gbk=os.path.join(RESULTS_DIR, "{sample}", "mge_annotated.gbk"),
+        att=os.path.join(RESULTS_DIR, "{sample}", "attachment_sites.tsv")
+    log:
+        os.path.join(RESULTS_DIR, "{sample}", "annotate_mge.log")
+    conda:
+        f"{ENV}"
+    shell:
+        """
+        python scripts/annotate_and_orient_mge.py \
+            --fasta {input.fasta} \
+            --trna_fa {input.trna} \
+            --integrase {input.orf} \
+            --blast {input.blast} \
+            --out_gbk {output.gbk} \
+            --out_att {output.att} > {log} 2>&1
         """

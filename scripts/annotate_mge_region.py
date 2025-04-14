@@ -118,9 +118,15 @@ def run_blast_on_region(query_seq, subject_seq, tmp_dir):
             raise
         try:
             proc = subprocess.run(
-                ["blastn", "-query", query_file, "-db", subject_file,
-                 "-outfmt", "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore",
-                 "-out", blast_out],
+                [
+                    "blastn",
+                    "-query", query_file,
+                    "-db", subject_file,
+                    "-outfmt", "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore",
+                    "-out", blast_out,
+                    "-word_size", "4",         # <-- минимальное значение
+                    "-dust", "no"              # <-- отключить low complexity filter
+                ],
                 check=True, capture_output=True, text=True
             )
             logger.info(f"blastn output: {proc.stdout}")
