@@ -1,0 +1,91 @@
+import os
+import glob
+import sys
+sys.path.append("../scripts")
+from logger import Logger
+
+logger = Logger(name="bakta_pipeline", log_to_console=True, log_to_file=True).get_logger()
+
+configfile: "bakta_config.yaml"
+
+INPUT_DIR    = config["paths"]["input_dir"]
+OUTPUT_DIR   = config["paths"]["output_dir"]
+PREFIX       = config["params"]["prefix"]
+BAKTA_ENV    = config["params"]["bakta_env"]
+MERGE_ENV    = config["params"]["merge_env"]
+MERGE_SCRIPT = config["scripts"]["merge_att"]
+
+def get_nonempty_samples():
+    samples = []
+    for fa in glob.glob(f"{INPUT_DIR}/*/mge_region.fa"):
+        if os.path.getsize(fa) > 0:
+            samples.append(os.path.basename(os.path.dirname(fa)))
+        else:
+            logger.info(f"Skipping empty file: {fa}")
+    logger.info(f"Found {len(samples)} samples")
+    return samples
+
+SAMPLES = get_nonempty_samples()
+
+rule all:
+    input:
+        expand(f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff.merged", sample=SAMPLES),
+        expand(f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.png",          sample=SAMPLES),
+        expand(f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.svg",          sample=SAMPLES)
+
+
+rule run_bakta:
+    input:
+        fasta = f"{INPUT_DIR}/{{sample}}/mge_region.fa"
+    output:
+        gbff = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff",
+        tsv  = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.tsv",
+        json = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.json",
+        png  = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.png",
+        svg  = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.svg"
+    log:
+        f"{OUTPUT_DIR}/{{sample}}/logs/bakta.log"
+    threads: 8
+    conda:
+        f"{BAKTA_ENV}"
+    shell:
+        """
+        mkdir -p {OUTPUT_DIR}/{wildcards.sample}/logs
+        if [ -s {input.fasta} ]; then
+            PYTHONWARNINGS=ignore bakta \
+              --db {config[paths][db]} \
+              --keep-contig-headers \
+              --output {OUTPUT_DIR}/{wildcards.sample} \
+              --prefix {PREFIX} \
+              --force \
+              --threads {threads} \
+              {input.fasta} > {log} 2> {log}.err
+        else
+            echo "Empty input fasta" > {log}
+            touch {output.gbff} {output.tsv} {output.json}
+        fi
+        [ ! -s {log}.err ] && rm -f {log}.err
+        """
+
+rule merge_att:
+    input:
+        gbff      = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff",
+        annotated = f"{INPUT_DIR}/{{sample}}/mge_annotated.gbk"
+    output:
+        merged = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff.merged"
+    log:
+        f"{OUTPUT_DIR}/{{sample}}/logs/merge_att.log"
+    conda:
+        f"{MERGE_ENV}"
+    shell:
+        """
+        mkdir -p {OUTPUT_DIR}/{wildcards.sample}/logs
+        python {MERGE_SCRIPT} \
+            --att   {input.annotated} \
+            --gbff  {input.gbff} \
+            --out   {output.merged} \
+            > {log} 2> {log}.err
+        if [ ! -s {log}.err ]; then
+             rm -f {log}.err
+        fi
+        """

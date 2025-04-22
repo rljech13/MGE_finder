@@ -25,3 +25,11 @@ all_integrases_summary.tsv
 # Env
 envs/*.lock
 EOF
+
+/additionals
+/results_2
+
+#bakta-pipeline ignore
+
+/bakta_pipeline/results_bakta
+/bakta_pipeline/tests

@@ -1,0 +1,15 @@
+paths:
+  input_dir: ../results                 
+  output_dir: ../bakta_pipeline/results_bakta         
+  db: /home/lam34/bakta_db/db
+  log_dir: ../bakta_pipeline/results_bakta
+
+scripts:
+  merge_att: /home/lam34/MGE_finder/bakta_pipeline/scripts/merge_att_info_gbff.py
+
+params:
+  threads: 32
+  prefix: annotation
+  bakta_env: "bakta"
+  merge_env: "MGE_finder"
+  clean_empty_err: true
