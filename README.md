@@ -1,11 +1,11 @@
-MGE Finder: A Snakemake Pipeline for Mobile Genetic Element Discovery
+## MGE Finder: A Snakemake Pipeline for Mobile Genetic Element Discovery
 
 MGE Finder is a modular and extensible Snakemake pipeline for detecting Mobile Genetic Elements (MGEs), such as integrases near tRNAs, and annotating their genomic context. It integrates ORF prediction, HMM-based domain search, tRNA detection, BLAST-based boundary detection, and GenBank annotation.
 
 ⸻
 
-Project Structure
-
+### Project Structure
+```
 MGE_finder/
 ├── config.yaml                  # Main configuration file
 ├── Snakefile                    # Snakemake pipeline
@@ -20,20 +20,20 @@ MGE_finder/
 │   └── annotate_and_orient_mge.py
 ├── results/                     # All output results are stored here
 └── run.sh                       # Example script to launch the pipeline
-
+```
 
 
 ⸻
 
-Installation
-	1.	Make sure you have conda or mamba installed.
-	2.	Create the environment:
+### Installation
 
-```bash
+1. Make sure you have conda or mamba installed.
+2. Create the environment:
+
+```
 mamba env create -f envs/MGE_finder.yaml
 ```
-
-	3.	Activate the environment:
+3. Activate the environment:
 
 ```bash
 conda activate MGE_finder
@@ -42,15 +42,16 @@ conda activate MGE_finder
 
 ⸻
 
-Running the Pipeline
+### Running the Pipeline
 
 bash run.sh
 
 Optional flags:
-	•	--dry-run or -n: preview steps without running them
-	•	--unlock: unlock the working directory after interruption
-	•	--force: force re-execution of rules
-	•	--rerun-incomplete: rerun only incomplete jobs
+
+	--dry-run or -n: preview steps without running them
+	--unlock: unlock the working directory after interruption
+	--force: force re-execution of rules
+	--rerun-incomplete: rerun only incomplete jobs
 
 ⸻
 
@@ -72,28 +73,31 @@ Step in Snakefile	Description
 
 ⸻
 
-Example config.yaml
+### Example config.yaml
 
 paths:
-  genomes_dir: "data/genomes"       # Path to input genome FASTA files (*.fna)
-  results_dir: "results"            # Where results will be saved
+	genomes_dir: "data/genomes"       # Path to input genome FASTA files (*.fna)
+	results_dir: "results"            # Where results will be saved
 
 execution:
-  conda_env: "MGE_finder"           # Conda environment name
+	conda_env: "MGE_finder"           # Conda environment name
 
 pfam_profiles:
-  - "pfam/PF00589.27.hmm"
-  - "pfam/PF22022.2.hmm"
+	- "pfam/PF00589.27.hmm"		# Put desired model in pfam dir
+	- "pfam/PF22022.2.hmm"
 
 
 
 ⸻
 
-Logs
+### Logs
+
 
 Each rule has an associated log file saved under the logs/ directory (or inside results/{sample}/ for sample-specific steps).
 
+
 Example log message format:
+
 
 [2025-04-14 10:32:10 - INFO] [hmm_search] 24 integrases detected on AE017221.1
 
@@ -101,38 +105,38 @@ Example log message format:
 
 ⸻
 
-Requirements
-	•	Python 3.8+
-	•	Snakemake ≥ 7.x
-	•	Biopython
-	•	Prodigal or Pyrodigal
-	•	ARAGORN
-	•	HMMER 3.x
-	•	BLAST+
-	•	BCBio.GFF
+### Requirements
+	Python 3.8+
+	Snakemake ≥ 7.x
+	Biopython
+	Prodigal or Pyrodigal
+	ARAGORN
+	HMMER 3.x
+	BLAST+
+	BCBio.GFF
 
 ⸻
 
-Outputs
+### Outputs
 
 For each genome sample, the pipeline produces:
-	•	orfs.gff, orfs.faa, orfs.ffn: ORF predictions
-	•	integrase_hits.txt, integrase_hits_summary.tsv, integrase_orfs.tsv: HMM results
-	•	trna.tsv: ARAGORN-predicted tRNAs
-	•	integrase_trna.tsv: Nearby integrase-tRNA pairs
-	•	mge_query.fa: Query fragments for BLAST
-	•	mge_blast.tsv: BLAST hits linking tRNA and integrase
-	•	mge_region.fa: Extracted MGE regions
-	•	mge_annotated.gbk: Annotated MGE regions (GenBank)
-	•	attachment_sites.tsv: Detected attL/attR coordinates
+		orfs.gff, orfs.faa, orfs.ffn: ORF predictions
+		integrase_hits.txt, integrase_hits_summary.tsv, integrase_orfs.tsv: HMM results
+		trna.tsv: ARAGORN-predicted tRNAs
+		integrase_trna.tsv: Nearby integrase-tRNA pairs
+		mge_query.fa: Query fragments for BLAST
+		mge_blast.tsv: BLAST hits linking tRNA and integrase
+		mge_region.fa: Extracted MGE regions
+		mge_annotated.gbk: Annotated MGE regions (GenBank)
+		attachment_sites.tsv: Detected attL/attR coordinates
 
 ⸻
 
 TODO / Future Features
-	-[]	Add plots/stats for integrase and MGE counts
-	-[]	Enable large-scale comparative analysis across genomes
-	-[]	Optional MCAPP-compatible output
-	-[]	Docker/Singularity container for full reproducibility
+	-	Add plots/stats for integrase and MGE counts
+	-	Enable large-scale comparative analysis across genomes
+	-	Optional MCAPP-compatible output
+	-	Docker/Singularity container for full reproducibility
 
 ⸻
 
