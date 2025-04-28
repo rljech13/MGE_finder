@@ -33,3 +33,8 @@ EOF
 
 /bakta_pipeline/results_bakta
 /bakta_pipeline/tests
+
+defense_overall.tsv
+defense_per_sample.tsv
+mge_overall.tsv
+mge_summary.tsv

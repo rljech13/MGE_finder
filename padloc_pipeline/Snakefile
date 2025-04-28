@@ -1,0 +1,83 @@
+# Snakefile
+import os, glob, sys, multiprocessing
+
+configfile: "padloc_config.yaml"
+
+LOGGER_DIR    = config["paths"]["logger_dir"]
+sys.path.insert(0, LOGGER_DIR)
+from logger import Logger
+logger = Logger(name="padloc_pipeline", log_to_console=True, log_to_file=True).get_logger()
+
+INPUT_DIR     = config["paths"]["input_dir"]
+OUTPUT_DIR    = config["paths"]["output_dir"]
+PADLOC_SCRIPT = config["paths"]["run_padloc_script"]
+PADLOC_ENV    = config["execution"]["conda_env"]
+NCORES        = multiprocessing.cpu_count()
+
+# the CSV name is based on OUTPUT_DIR's basename, e.g. 'results'
+CSV_PREFIX = os.path.basename(OUTPUT_DIR)
+CSV_NAME   = f"{CSV_PREFIX}_padloc.csv"
+
+# collect valid samples
+SAMPLES = []
+for d in glob.glob(os.path.join(INPUT_DIR, "*/")):
+    fa = os.path.join(d, "mge_region.fa")
+    if os.path.isfile(fa) and os.path.getsize(fa) > 0:
+        SAMPLES.append(os.path.basename(os.path.dirname(d)))
+    else:
+        logger.info(f"Skipping {fa}")
+logger.info(f"Found {len(SAMPLES)} samples")
+
+rule all:
+    input:
+        expand(os.path.join(OUTPUT_DIR, "{sample}", CSV_NAME), sample=SAMPLES)
+
+rule predict_orfs:
+    input:
+        fasta = os.path.join(INPUT_DIR, "{sample}", "mge_region.fa")
+    output:
+        faa = os.path.join(OUTPUT_DIR, "{sample}", "orfs.faa"),
+        gff = os.path.join(OUTPUT_DIR, "{sample}", "orfs.gff")
+    log:
+        os.path.join(OUTPUT_DIR, "{sample}", "prodigal.log")
+    threads: 1
+    conda: f"{PADLOC_ENV}"
+    shell:
+        """
+        mkdir -p {OUTPUT_DIR}/{wildcards.sample}
+        if [ -s {input.fasta} ]; then
+            prodigal \
+              -i {input.fasta} \
+              -a {output.faa} \
+              -o {output.gff} \
+              -f gff -p meta \
+              > {log} 2>&1
+        else
+            echo "Empty input fasta" > {log}
+            touch {output.faa} {output.gff}
+        fi
+        """
+
+rule run_padloc:
+    input:
+        faa = os.path.join(OUTPUT_DIR, "{sample}", "orfs.faa"),
+        gff = os.path.join(OUTPUT_DIR, "{sample}", "orfs.gff")
+    output:
+        csv = os.path.join(OUTPUT_DIR, "{sample}", CSV_NAME)
+    log:
+        os.path.join(OUTPUT_DIR, "{sample}", "padloc.log")
+    threads: 2
+    conda: f"{PADLOC_ENV}"
+    shell:
+        """
+        mkdir -p {OUTPUT_DIR}/{wildcards.sample}
+        python3 {PADLOC_SCRIPT} \
+            --logger-dir {LOGGER_DIR} \
+            --faa {input.faa} \
+            --gff {input.gff} \
+            --cpu {threads} \
+            --outdir {OUTPUT_DIR}/{wildcards.sample} \
+            --log {log} \
+            --force \
+            > {log} 2>&1
+        """

@@ -7,7 +7,6 @@ from logger import Logger
 
 logger = Logger(name="annotate_mge", level=Logger.Level.INFO).get_logger()
 
-
 def reverse_coords(seq_len: int, start: int, end: int) -> tuple[int, int]:
     """Recalculate coordinates after reverse-complementing a sequence.
 
@@ -20,7 +19,6 @@ def reverse_coords(seq_len: int, start: int, end: int) -> tuple[int, int]:
         tuple[int, int]: New start and end coordinates after reversal.
     """
     return seq_len - end, seq_len - start
-
 
 def load_input_files(trna_fa_path: str, integrase_path: str, blast_path: str) -> tuple[dict, pd.DataFrame, pd.DataFrame]:
     """Load tRNA FASTA, integrase hit summary, and BLAST hit tables.
@@ -43,7 +41,6 @@ def load_input_files(trna_fa_path: str, integrase_path: str, blast_path: str) ->
         logger.warning("One or more input tables are empty. Writing empty outputs.")
         return {}, pd.DataFrame(), pd.DataFrame()
 
-
 def get_annotation_data(record_id: str, trna_records: dict, integrase_df: pd.DataFrame, blast_df: pd.DataFrame):
     """Extract relevant annotation data for a single MGE region.
 
@@ -63,7 +60,6 @@ def get_annotation_data(record_id: str, trna_records: dict, integrase_df: pd.Dat
     int_row = integrase_df[integrase_df["orf_id"] == core_id].iloc[0]
     blast_row = blast_df[blast_df["integrase_id"] == core_id].sort_values("evalue").iloc[0]
     return core_id, trna_rec, int_row, blast_row
-
 
 def annotate_record(record, trna_rec, int_row, blast_row):
     """Annotate a MGE region with att sites and recalculated integrase CDS.
@@ -145,7 +141,6 @@ def annotate_record(record, trna_rec, int_row, blast_row):
 
     return record, features, att_data
 
-
 def annotate_mge(fasta_path: str, trna_fa_path: str, integrase_path: str, blast_path: str,
                  output_gbk: str, output_att: str) -> None:
     """Annotate MGE regions with att sites and integrase CDS.
@@ -194,7 +189,6 @@ def annotate_mge(fasta_path: str, trna_fa_path: str, integrase_path: str, blast_
         logger.warning("No valid annotations found. Writing empty outputs.")
         open(output_gbk, "w").close()
         open(output_att, "w").close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Annotate MGE regions with att sites and integrase")
