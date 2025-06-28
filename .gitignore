@@ -38,3 +38,19 @@ defense_overall.tsv
 defense_per_sample.tsv
 mge_overall.tsv
 mge_summary.tsv
+
+/analysis
+
+# padloc pipeline ignore
+
+# genomes ignore
+/genomes
+
+# classification ignore
+## cluster MGE
+/classification_investigation/clusterMGE/results_mge
+
+## vcontact ignore
+/classification_investigation/vcontact/results
+
+

@@ -1,0 +1,106 @@
+import os
+import sys
+import pathlib
+import yaml 
+import glob
+
+# Добавление пути к пользовательским скриптам
+sys.path.append("../../scripts")
+from logger import Logger
+
+# Инициализация логгера
+logger = Logger(name="vcontact_pipeline",
+                log_to_console=True,
+                log_to_file=True).get_logger()
+
+# Загрузка конфигурационного файла
+configfile: "vcontact_config.yaml"
+
+# Определение путей из конфигурации
+PROT_ALL     = config["paths"]["all_proteins"]
+REP_MGE_NT   = config["paths"]["rep_mge_fasta"]
+OUTPUT_DIR   = config["paths"]["output_dir"]
+
+# Определение сред выполнения
+SCRIPT_ENV   = config["execution"]["script_env"]
+CONDA_ENV    = config["execution"]["conda_env"]
+
+# Директория для логов
+LOGS_DIR = f"{OUTPUT_DIR}/logs"
+
+# Правило по умолчанию
+rule all:
+    input:
+        proteins = f"{OUTPUT_DIR}/rep_proteins.faa",
+        g2g      = f"{OUTPUT_DIR}/gene2genome.csv",
+        cluster  = directory(f"{OUTPUT_DIR}/vcontact_out")
+
+# Извлечение идентификаторов образцов из репрезентативных MGE
+rule get_rep_samples:
+    input:
+        REP_MGE_NT
+    output:
+        f"{OUTPUT_DIR}/rep_samples.txt"
+    log:
+        f"{LOGS_DIR}/get_rep_samples.log"
+    conda:
+        SCRIPT_ENV
+    shell:
+        """
+        mkdir -p $(dirname {output}) $(dirname {log})
+        python scripts/get_rep_samples.py {input} {output} &> {log}
+        """
+
+# Фильтрация белков для выбранных образцов
+rule filter_rep_proteins:
+    input:
+        prot = PROT_ALL,
+        samp = rules.get_rep_samples.output
+    output:
+        f"{OUTPUT_DIR}/rep_proteins.faa"
+    log:
+        f"{LOGS_DIR}/filter_rep_proteins.log"
+    conda:
+        SCRIPT_ENV
+    shell:
+        """
+        mkdir -p {OUTPUT_DIR} {LOGS_DIR}
+        python scripts/filter_rep_proteins.py {input} {output} &> {log}
+        """
+
+# Создание файла gene2genome
+rule make_gene2genome:
+    input:
+        f"{OUTPUT_DIR}/rep_proteins.faa"
+    output:
+        f"{OUTPUT_DIR}/gene2genome.csv"
+    log:
+        f"{LOGS_DIR}/gene2genome.log"
+    threads: 1
+    conda:
+        CONDA_ENV
+    shell:
+        """
+        mkdir -p $(dirname {output}) $(dirname {log})
+        vcontact2_gene2genome --proteins {input} --output {output} -s 'Prodigal-FAA' &> {log}
+        """
+
+# Запуск vConTACT2
+rule run_vcontact2:
+    input:
+        prots = rules.filter_rep_proteins.output,
+        g2g   = rules.make_gene2genome.output
+    output:
+        directory(f"{OUTPUT_DIR}/vcontact_out")
+    log:
+        f"{LOGS_DIR}/vcontact2.log"
+    threads: 16
+    conda:
+        CONDA_ENV
+    shell:
+        """
+        mkdir -p {output} $(dirname {log})
+        vcontact2 --raw-proteins {input.prots} --proteins-fp {input.g2g} \
+                  --rel-mode Diamond --db None --pcs-mode MCL --vcs-mode ClusterONE \
+                  --threads {threads} --output-dir {output} &> {log}
+        """

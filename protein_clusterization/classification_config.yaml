@@ -1,0 +1,26 @@
+# classification_config.yaml
+
+# Название conda-окружения, в котором доступен logger и mmseqs
+conda_env: "MGE_finder"
+
+proteins:
+  # glob-паттерн к файлам с предсказанными белками Bakta (annotation.faa) для каждого образца
+  pattern: "/home/lam34/MGE_finder/bakta_pipeline/results_bakta/*/annotation.faa"
+
+mmseqs:
+  # Каталог, куда будут складываться результаты кластеризации
+  results_dir: "results"
+  # Временный каталог для работы mmseqs
+  tmp_dir: "results/mmseqs_tmp"
+  # Префикс базы данных mmseqs (будет создан каталог results/mmseqs_db)
+  db_prefix: "results/mmseqs_db"
+  # Префикс результатов кластеризации (будет создан каталог results/mmseqs_cluster)
+  cluster_prefix: "results/mmseqs_cluster"
+  # Префикс базы репрезентативных seq (будет создан каталог results/mmseqs_repdb)
+  repdb_prefix: "results/mmseqs_repdb"
+  # Каталог для финальных файлов по каждому кластеру
+  clusters_dir: "results/clusters_rep_seqs"
+  # Порог минимальной идентичности между последовательностями (0–1)
+  min_seq_id: 0.8
+  # Порог покрытия выравнивания (0–1)
+  coverage: 0.5

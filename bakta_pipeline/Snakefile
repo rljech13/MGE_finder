@@ -4,14 +4,20 @@ import sys
 sys.path.append("../scripts")
 from logger import Logger
 
-logger = Logger(name="bakta_pipeline", log_to_console=True, log_to_file=True).get_logger()
+logger = Logger(
+    name="bakta_pipeline",
+    log_to_console=True,
+    log_to_file=True
+).get_logger()
 
 configfile: "bakta_config.yaml"
 
+# Paths and params
 INPUT_DIR    = config["paths"]["input_dir"]
 OUTPUT_DIR   = config["paths"]["output_dir"]
+GENOMES_DIR  = config["paths"]["genomes_dir"]
 PREFIX       = config["params"]["prefix"]
-BAKTA_ENV    = config["params"]["bakta_env"]
+BAKTA_ENV    = config["params"]["bakta_env"]     
 MERGE_ENV    = config["params"]["merge_env"]
 MERGE_SCRIPT = config["scripts"]["merge_att"]
 
@@ -29,25 +35,56 @@ SAMPLES = get_nonempty_samples()
 
 rule all:
     input:
+        expand(os.path.join(GENOMES_DIR, "{sample}.trn"), sample=SAMPLES),
         expand(f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff.merged", sample=SAMPLES),
         expand(f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.png",          sample=SAMPLES),
         expand(f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.svg",          sample=SAMPLES)
 
+rule train_prodigal:
+    """
+    Train prodigal on every sample
+    """
+    input:
+        genome=lambda wc: os.path.join(GENOMES_DIR, f"{wc.sample}.fna")
+    output:
+        trn=os.path.join(GENOMES_DIR, "{sample}.trn")
+    log:
+        os.path.join(OUTPUT_DIR, "{sample}", "logs", "prodigal_train.log")
+    conda:
+        MERGE_ENV
+    shell:
+       """
+       mkdir -p {OUTPUT_DIR}/{wildcards.sample}/logs
+       if [ -s {input.genome} ]; then
+           prodigal \
+             -i {input.genome} \
+             -t {output.trn} \
+             > {log} 2>&1
+       else
+           echo "ERROR: genome file is missing or empty: {input.genome}" >&2
+           exit 1
+       fi
+       """
 
 rule run_bakta:
+    """
+    Annotate mge_region.fa 
+    """
     input:
-        fasta = f"{INPUT_DIR}/{{sample}}/mge_region.fa"
+        fasta=os.path.join(INPUT_DIR, "{sample}", "mge_region.fa"),
+        trn=os.path.join(GENOMES_DIR, "{sample}.trn")
     output:
-        gbff = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff",
-        tsv  = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.tsv",
-        json = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.json",
-        png  = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.png",
-        svg  = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.svg"
+        gbff=os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.gbff"),
+        tsv=os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.tsv"),
+        json=os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.json"),
+        png=os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.png"),
+        svg=os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.svg")
     log:
-        f"{OUTPUT_DIR}/{{sample}}/logs/bakta.log"
+        bakta=os.path.join(OUTPUT_DIR, "{sample}", "logs", "bakta.log"),
+        err=os.path.join(OUTPUT_DIR, "{sample}", "logs", "bakta.err")
     threads: 8
     conda:
-        f"{BAKTA_ENV}"
+        BAKTA_ENV
     shell:
         """
         mkdir -p {OUTPUT_DIR}/{wildcards.sample}/logs
@@ -55,28 +92,34 @@ rule run_bakta:
             PYTHONWARNINGS=ignore bakta \
               --db {config[paths][db]} \
               --keep-contig-headers \
+              --prodigal-tf {input.trn} \
               --output {OUTPUT_DIR}/{wildcards.sample} \
               --prefix {PREFIX} \
               --force \
               --threads {threads} \
-              {input.fasta} > {log} 2> {log}.err
+              {input.fasta} \
+              > {log.bakta} 2> {log.err}
+            [ ! -s {log.err} ] && rm -f {log.err}
         else
-            echo "Empty input fasta" > {log}
+            echo "Empty input fasta" > {log.bakta}
             touch {output.gbff} {output.tsv} {output.json}
         fi
-        [ ! -s {log}.err ] && rm -f {log}.err
         """
 
 rule merge_att:
+    """
+    Merge bakta output with att sites
+    """
     input:
-        gbff      = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff",
-        annotated = f"{INPUT_DIR}/{{sample}}/mge_annotated.gbk"
+        gbff      = os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.gbff"),
+        annotated = os.path.join(INPUT_DIR, "{sample}", "mge_annotated.gbk")
     output:
-        merged = f"{OUTPUT_DIR}/{{sample}}/{PREFIX}.gbff.merged"
+        merged = os.path.join(OUTPUT_DIR, "{sample}", f"{PREFIX}.gbff.merged")
     log:
-        f"{OUTPUT_DIR}/{{sample}}/logs/merge_att.log"
+        merge = os.path.join(OUTPUT_DIR, "{sample}", "logs", "merge_att.log"),
+        err   = os.path.join(OUTPUT_DIR, "{sample}", "logs", "merge_att.err")
     conda:
-        f"{MERGE_ENV}"
+        MERGE_ENV
     shell:
         """
         mkdir -p {OUTPUT_DIR}/{wildcards.sample}/logs
@@ -84,8 +127,10 @@ rule merge_att:
             --att   {input.annotated} \
             --gbff  {input.gbff} \
             --out   {output.merged} \
-            > {log} 2> {log}.err
-        if [ ! -s {log}.err ]; then
-             rm -f {log}.err
+            > {log.merge} 2> {log.err}
+        
+        # Если stderr-файл пуст — удаляем его
+        if [ ! -s {log.err} ]; then
+            rm -f {log.err}
         fi
         """

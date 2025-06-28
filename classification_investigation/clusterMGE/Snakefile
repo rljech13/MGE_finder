@@ -1,0 +1,146 @@
+###############################################################################
+#  MGE NUCLEOTIDE CLUSTER PIPELINE  (≥0.9 ID, ≥0.95 coverage)
+###############################################################################
+
+import os, glob, sys, re, tempfile
+sys.path.append("../../scripts")           # кастомный логгер лежит на 2 уровня выше
+from logger import Logger
+
+logger = Logger(name="mge_cluster",
+                log_to_console=True,
+                log_to_file=True).get_logger()
+
+# ──────────────────────────────  CONFIG  ─────────────────────────────────── #
+configfile: "mge_cluster_config.yaml"
+
+GBK_GLOB   = config["paths"]["mge_gbk_pattern"]          # .../results/*/mge_annotated.gbk
+CONDA_ENV  = config["execution"]["conda_env"]
+
+RES_DIR    = config["mmseqs"]["results_dir"]
+TMP_DIR    = config["mmseqs"]["tmp_dir"]
+DB_PREFIX      = config["mmseqs"]["db_prefix"]
+CLUSTER_PREFIX = config["mmseqs"]["cluster_prefix"]
+REPDB_PREFIX   = config["mmseqs"]["repdb_prefix"]
+
+MIN_ID   = config["mmseqs"]["min_seq_id"]     # 0.9
+COVERAGE = config["mmseqs"]["coverage"]       # 0.95
+
+DB_INDEX      = f"{DB_PREFIX}.index"
+CLUSTER_INDEX = f"{CLUSTER_PREFIX}.index"
+REPDB_INDEX   = f"{REPDB_PREFIX}.index"
+CLUSTER_TSV   = f"{CLUSTER_PREFIX}.tsv"
+
+COMBINED_FASTA = os.path.join(RES_DIR, "all_mge_nt.fa")
+REP_FASTA      = os.path.join(RES_DIR, "rep_mge_nt.fa")
+LOGS_DIR       = os.path.join(RES_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+GBK_FILES = sorted(glob.glob(GBK_GLOB))
+if not GBK_FILES:
+    sys.exit(f"No mge_annotated.gbk found by pattern: {GBK_GLOB}")
+logger.info(f"Found {len(GBK_FILES)} annotated GBKs")
+
+# ─────────────────────────────  RULE all  ────────────────────────────────── #
+rule all:
+    input:
+        CLUSTER_TSV,
+        REP_FASTA,
+        f"{RES_DIR}/cluster_stats.tsv"
+
+
+
+# ───────────────  EXTRACT FASTA FROM GBK  (fixed)  ───────────────────────── #
+rule gbk_to_fasta:
+    input:  GBK_FILES
+    output: COMBINED_FASTA
+    log:    f"{LOGS_DIR}/gbk_to_fasta.log"
+    conda:  CONDA_ENV
+    shell:
+        r"""
+        mkdir -p $(dirname {output}) $(dirname {log})
+        python - << 'PY' "{input}" "{output}" "{log}"
+import sys, pathlib, Bio.SeqIO as b
+gbks   = sys.argv[1].split()
+out_fa = sys.argv[2]
+log_f  = sys.argv[3]
+
+n = 0
+with open(out_fa, "w") as fo:
+    for gbk in gbks:
+        sample = pathlib.Path(gbk).parent.name
+        for rec in b.parse(gbk, "genbank"):
+            rec.id = f"{{rec.id}}|sample={{sample}}"      # ← скобки удвоены
+            rec.description = ""
+            b.FastaIO.FastaWriter(fo, wrap=None).write_record(rec)
+            n += 1
+
+with open(log_f, "w") as lg:
+    lg.write(f"Extracted {{n}} records from {{len(gbks)}} GBK files\n")
+PY
+        """
+
+# ─────────────────────────  MMSEQS ∙ createdb  ──────────────────────────── #
+rule mmseqs_createdb:
+    input:  COMBINED_FASTA
+    output: DB_INDEX
+    log:    f"{LOGS_DIR}/mmseqs_createdb.log"
+    conda:  CONDA_ENV
+    shell:  """
+            mmseqs createdb {input} {DB_PREFIX} &> {log}
+            """
+
+# ─────────────────────────  MMSEQS ∙ cluster  ───────────────────────────── #
+rule mmseqs_cluster:
+    input:  DB_INDEX
+    output: CLUSTER_INDEX
+    log:    f"{LOGS_DIR}/mmseqs_cluster.log"
+    params: tmp=TMP_DIR, id=MIN_ID, cov=COVERAGE
+    conda:  CONDA_ENV
+    shell:  """
+            mmseqs cluster {DB_PREFIX} {CLUSTER_PREFIX} {params.tmp} \
+                   --min-seq-id {params.id} -c {params.cov} --seq-id-mode 1 &> {log}
+            """
+
+# ───────────────────────  REPR DB via createsubdb  ──────────────────────── #
+rule mmseqs_createsubdb_rep:
+    input:  CLUSTER_INDEX, DB_INDEX
+    output: REPDB_INDEX
+    log:    f"{LOGS_DIR}/mmseqs_createsubdb.log"
+    conda:  CONDA_ENV
+    shell:  """
+            mmseqs createsubdb {CLUSTER_PREFIX} {DB_PREFIX} {REPDB_PREFIX} &> {log}
+            """
+
+# ───────────────────────  FASTA репрезентативов  ────────────────────────── #
+rule mmseqs_result2flat:
+    input:  DB_INDEX, REPDB_INDEX
+    output: REP_FASTA
+    log:    f"{LOGS_DIR}/mmseqs_result2flat.log"
+    conda:  CONDA_ENV
+    shell:  """
+            mmseqs result2flat {DB_PREFIX} {DB_PREFIX} {REPDB_PREFIX} {output} &> {log}
+            """
+
+# ─────────────────────────  TSV «кластер»  ──────────────────────────────── #
+rule mmseqs_createtsv:
+    input:  DB_INDEX, CLUSTER_INDEX
+    output: CLUSTER_TSV
+    log:    f"{LOGS_DIR}/mmseqs_createtsv.log"
+    params: tmp=TMP_DIR
+    conda:  CONDA_ENV
+    shell:  """
+            mmseqs createtsv {DB_PREFIX} {DB_PREFIX} {CLUSTER_PREFIX} {output} {params.tmp} &> {log}
+            """
+
+rule cluster_stats:
+    input:
+        CLUSTER_TSV
+    output:
+        f"{RES_DIR}/cluster_stats.tsv"
+    shell:
+        """
+        awk '{{cnt[$1]++}} END{{for(c in cnt)print c"\t"cnt[c]}}' {input} \
+        | sort -k2,2nr > {output}
+        """
+
+

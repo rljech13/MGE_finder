@@ -1,0 +1,161 @@
+###############################################################################
+#  SINGLE-SHOT MMSEQS2 CLUSTER PIPELINE  +  ORIGIN TAGGING FOR REPRESENTATIVES
+###############################################################################
+
+import os, glob, sys
+sys.path.append("../scripts")
+from logger import Logger
+
+logger = Logger(name="mmseqs_single",
+                log_to_console=True,
+                log_to_file=True).get_logger()
+
+# --------------------------------------------------------------------------- #
+configfile: "classification_config.yaml"
+
+PROTEIN_GLOB   = config["proteins"]["pattern"]
+CONDA_ENV      = config["conda_env"]
+
+mmcfg          = config["mmseqs"]
+RES_DIR        = mmcfg["results_dir"]
+TMP_DIR        = mmcfg["tmp_dir"]
+
+DB_PREFIX      = mmcfg["db_prefix"]          # results/mmseqs_db
+CLUSTER_PREFIX = mmcfg["cluster_prefix"]     # results/mmseqs_cluster
+REPDB_PREFIX   = mmcfg["repdb_prefix"]       # results/mmseqs_repdb
+
+DB_INDEX       = f"{DB_PREFIX}.index"
+CLUSTER_INDEX  = f"{CLUSTER_PREFIX}.index"
+REPDB_INDEX    = f"{REPDB_PREFIX}.index"
+CLUSTER_TSV    = f"{CLUSTER_PREFIX}.tsv"
+
+MIN_ID   = mmcfg["min_seq_id"]
+COVERAGE = mmcfg["coverage"]
+
+COMBINED_FASTA  = os.path.join(RES_DIR, "all_bakta_proteins.faa")
+REP_FASTA       = os.path.join(RES_DIR, "rep_sequences_all.faa")
+REP_FASTA_ANN   = os.path.join(RES_DIR, "rep_sequences_all.annotated.faa")
+IDMAP_TSV       = os.path.join(RES_DIR, "id2sample.tsv")
+LOGS_DIR        = os.path.join(RES_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+PROTEIN_FILES = sorted(glob.glob(PROTEIN_GLOB))
+if not PROTEIN_FILES:
+    sys.exit(f"No *.faa найдено по шаблону: {PROTEIN_GLOB}")
+logger.info(f"Found {len(PROTEIN_FILES)} annotation.faa")
+
+# ===============================  ЦЕЛЬ  ===================================== #
+rule all:
+    input:
+        CLUSTER_TSV,
+        REP_FASTA_ANN                    # конечный артефакт теперь аннотированный
+
+# ==========================  СОБРАТЬ FASTA  ================================= #
+rule gather_bakta_proteins:
+    input:  PROTEIN_FILES
+    output: COMBINED_FASTA
+    log:    f"{LOGS_DIR}/gather_bakta_proteins.log"
+    conda:  CONDA_ENV
+    shell:
+        """
+        mkdir -p $(dirname {output}) $(dirname {log})
+        cat {input} > {output} 2> {log}
+        """
+
+# ==============================  CREATEDB  ================================== #
+rule mmseqs_createdb:
+    input:  COMBINED_FASTA
+    output: DB_INDEX
+    log:    f"{LOGS_DIR}/mmseqs_createdb.log"
+    conda:  CONDA_ENV
+    shell:
+        """
+        mmseqs createdb {input} {DB_PREFIX} &> {log}
+        """
+
+# ===============================  CLUSTER  ================================== #
+rule mmseqs_cluster:
+    input:  DB_INDEX
+    output: CLUSTER_INDEX
+    log:    f"{LOGS_DIR}/mmseqs_cluster.log"
+    params: tmp=TMP_DIR, id=MIN_ID, cov=COVERAGE
+    conda:  CONDA_ENV
+    shell:
+        """
+        mmseqs cluster {DB_PREFIX} {CLUSTER_PREFIX} {params.tmp} \
+            --min-seq-id {params.id} -c {params.cov} &> {log}
+        """
+
+# ==============  REPR-БАЗА (createsubdb вместо createrepdb)  =============== #
+rule mmseqs_createsubdb_rep:
+    input:  CLUSTER_INDEX, DB_INDEX
+    output: REPDB_INDEX
+    log:    f"{LOGS_DIR}/mmseqs_createsubdb.log"
+    conda:  CONDA_ENV
+    shell:
+        """
+        mmseqs createsubdb {CLUSTER_PREFIX} {DB_PREFIX} {REPDB_PREFIX} &> {log}
+        """
+
+# ====================  FASTA REPRESENTATIVES (raw)  ======================== #
+rule mmseqs_result2flat:
+    input:  DB_INDEX, REPDB_INDEX
+    output: REP_FASTA
+    log:    f"{LOGS_DIR}/mmseqs_result2flat.log"
+    conda:  CONDA_ENV
+    shell:
+        """
+        mmseqs result2flat {DB_PREFIX} {DB_PREFIX} {REPDB_PREFIX} {output} &> {log}
+        """
+
+# ===============================  TSV  ====================================== #
+rule mmseqs_createtsv:
+    input:  DB_INDEX, CLUSTER_INDEX
+    output: CLUSTER_TSV
+    log:    f"{LOGS_DIR}/mmseqs_createtsv.log"
+    params: tmp=TMP_DIR
+    conda:  CONDA_ENV
+    shell:
+        """
+        mmseqs createtsv {DB_PREFIX} {DB_PREFIX} {CLUSTER_PREFIX} {output} {params.tmp} &> {log}
+        """
+
+# =====================  MAP ID → EXTRA INFO  (PATCH)  ===================== #
+rule build_id2sample:
+    input:  PROTEIN_FILES
+    output: IDMAP_TSV
+    log:    f"{LOGS_DIR}/build_id2sample.log"
+    conda:  CONDA_ENV
+    shell:
+        r"""
+        mkdir -p $(dirname {output}) $(dirname {log})
+        : > {output}
+        for faa in {input}; do
+            genome=$(basename $(dirname "$faa"))
+            # seq_id = $1 ; описание = всё после первого пробела ($0 без id)
+            awk -v g="$genome" '/^>/{{sub(/^>/,"",$0); id=$1; $1=""; sub(/^ +/,""); \
+                                 print id"\t"$0" "g}}' "$faa" >> {output}
+        done 2> {log}
+        """
+
+# ===========  ADD "|<description … genomeID>" TO REP-FASTA  (PATCH)  ====== #
+rule annotate_rep_fasta:
+    input:
+        rep   = REP_FASTA,
+        idmap = IDMAP_TSV
+    output:
+        REP_FASTA_ANN
+    log:
+        f"{LOGS_DIR}/annotate_rep_fasta.log"
+    conda:
+        CONDA_ENV
+    shell:
+        r"""
+        mkdir -p $(dirname {output}) $(dirname {log})
+        # 1-й проход: считываем map[id] = описание+genome
+        # 2-й проход: печатаем >id|map[id]
+        awk 'NR==FNR {{map[$1]=$2; for(i=3;i<=NF;++i) map[$1]=map[$1]" "$i; next}}
+             /^>/    {{id=substr($0,2); print ">"id"|"map[id]; next}}
+             1' \
+            {input.idmap} {input.rep} > {output} 2> {log}
+        """

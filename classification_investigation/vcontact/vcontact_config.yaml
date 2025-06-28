@@ -1,0 +1,8 @@
+paths:
+  all_proteins: "/home/lam34/MGE_finder/protein_clusterization/results/all_bakta_proteins.faa"
+  rep_mge_fasta: "/home/lam34/MGE_finder/classification_investigation/clusterMGE/results_mge/rep_mge_nt.fa"
+  output_dir: "/home/lam34/MGE_finder/classification_investigation/vcontact/results_vcontact"
+
+execution:
+  script_env: "MGE_finder"    # conda‑окружение для Python‑скриптов с Biopython, logger и т.п.
+  conda_env:  "vContact2"     # conda‑окружение с vContact2 и зависимостями
