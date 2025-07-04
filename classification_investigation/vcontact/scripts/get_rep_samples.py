@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-Собирает список sample-ID из FASTA репрезентативных MGE.
-Использование:
+Извлекает sample-ID из FASTA репрезентативных MGE.
+Берёт именно rec.description, потому что rec.id содержит только locus-tag.
+
+usage:
     get_rep_samples.py rep_mge_nt.fa out_samples.txt
 """
-import sys, re, Bio.SeqIO as b
+import sys, re
+from Bio import SeqIO
 
 if len(sys.argv) != 3:
     sys.exit("usage: get_rep_samples.py <rep_mge_nt.fa> <out_samples.txt>")
@@ -12,8 +15,8 @@ if len(sys.argv) != 3:
 fa_in, txt_out = sys.argv[1:]
 samples = set()
 
-for rec in b.parse(fa_in, "fasta"):
-    m = re.search(r"\|sample=([^\|\s]+)", rec.id)
+for rec in SeqIO.parse(fa_in, "fasta"):
+    m = re.search(r"\|sample=([^\|\s]+)", rec.description)
     if m:
         samples.add(m.group(1))
 
