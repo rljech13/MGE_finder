@@ -1,5 +1,7 @@
 ## MGE Finder: A Snakemake Pipeline for Mobile Genetic Element Discovery
 
+## ! Project is in active development
+
 MGE Finder is a modular and extensible Snakemake pipeline for detecting Mobile Genetic Elements (MGEs), such as integrases near tRNAs, and annotating their genomic context. It integrates ORF prediction, HMM-based domain search, tRNA detection, BLAST-based boundary detection, and GenBank annotation.
 
 ⸻
@@ -133,10 +135,9 @@ For each genome sample, the pipeline produces:
 ⸻
 
 TODO / Future Features
-	-	Add plots/stats for integrase and MGE counts
-	-	Enable large-scale comparative analysis across genomes
 	-	Optional MCAPP-compatible output
 	-	Docker/Singularity container for full reproducibility
+	-	
 
 ⸻
 
