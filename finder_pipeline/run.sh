@@ -2,7 +2,7 @@
 set -e
 
 # === CONFIGURATION ===
-CONFIG="config.yaml"
+CONFIG="finder_config.yaml"
 CORES=$(nproc)
 SNAKEFILE="Snakefile"
 WORKDIR=$(pwd)
@@ -33,6 +33,7 @@ snakemake \
   --configfile "$CONFIG" \
   --cores "$CORES" \
   --use-conda \
+  --conda-prefix /home/lam34/miniforge3/envs \
   --printshellcmds \
   --show-failed-logs \
   --rerun-incomplete \

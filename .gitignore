@@ -6,7 +6,6 @@
 *.out
 *.html
 *.zip
-*.gz
 
 # Python
 __pycache__/
@@ -14,43 +13,80 @@ __pycache__/
 *.pyo
 *.egg
 *.egg-info/
+*.py[cod]
+*$py.class
 
-# Proj directories
-results/
-data/
+# Results and output directories
+finder_pipeline/results/
+finder_pipeline/data/
+finder_pipeline/logs/
+finder_pipeline/*.tsv
+
+bakta_pipeline/logs/
+bakta_pipeline/results_bakta/
+bakta_pipeline/tests/
+
+padloc_pipeline/logs/
+padloc_pipeline/results/
+
+classification_investigation/clusterMGE/results_mge/
+classification_investigation/clusterMGE/logs/
+classification_investigation/vcontact/results_vcontact/
+classification_investigation/vcontact/logs/
+classification_investigation/vcontact/selected_samples.tgz
+
+protein_clusterization/results/
+protein_clusterization/logs/
+
+# Analysis and statistics
+analysis/
+*.tsv
+!**/config.yaml
+!**/*_config.yaml
+
+# Genomes and large data files
+genomes/
+integrases/
+refseq_prokaryote/bacteria/
+refseq_prokaryote/archaea/
+refseq_prokaryote/*.tsv
+refseq_prokaryote/*.log
+refseq_prokaryote/download_*.sh
+
+# Compressed files
+*.gz
+*.tar.gz
+*.zip
+*.bz2
+
+# Results archives
+results_2.tar.gz
+*.tar
+
+# Environment files
+envs/*.lock
+.conda/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Logs directory
 logs/
 
-all_integrases_summary.tsv
-
-# Env
-envs/*.lock
-EOF
-
-/additionals
-/results_2
-
-#bakta-pipeline ignore
-
-/bakta_pipeline/results_bakta
-/bakta_pipeline/tests
-
-defense_overall.tsv
-defense_per_sample.tsv
-mge_overall.tsv
-mge_summary.tsv
-
-/analysis
-
-# padloc pipeline ignore
-
-# genomes ignore
-/genomes
-
-# classification ignore
-## cluster MGE
-/classification_investigation/clusterMGE/results_mge
-
-## vcontact ignore
-/classification_investigation/vcontact/results
-
-
+# Additionals (may contain user-specific scripts)
+# Uncomment if you want to exclude:
+# additionals/

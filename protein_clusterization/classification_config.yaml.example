@@ -1,0 +1,26 @@
+# Conda environment name with logger and mmseqs
+conda_env: "MGE_finder"
+
+proteins:
+  # glob pattern to Bakta-predicted protein files (annotation.faa) for each sample
+  # Use absolute path or adjust relative to this directory
+  pattern: "../bakta_pipeline/results_bakta/*/annotation.faa"
+
+mmseqs:
+  # Directory where clustering results will be stored
+  results_dir: "results"
+  # Temporary directory for mmseqs work
+  tmp_dir: "results/mmseqs_tmp"
+  # Prefix for mmseqs database (will create results/mmseqs_db directory)
+  db_prefix: "results/mmseqs_db"
+  # Prefix for clustering results (will create results/mmseqs_cluster directory)
+  cluster_prefix: "results/mmseqs_cluster"
+  # Prefix for representative sequences database (will create results/mmseqs_repdb directory)
+  repdb_prefix: "results/mmseqs_repdb"
+  # Directory for final files per cluster
+  clusters_dir: "results/clusters_rep_seqs"
+  # Minimum identity threshold between sequences (0-1)
+  min_seq_id: 0.8
+  # Alignment coverage threshold (0-1)
+  coverage: 0.5
+

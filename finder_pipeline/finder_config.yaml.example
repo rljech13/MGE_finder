@@ -1,0 +1,26 @@
+paths:
+  genomes_dir: "data/genomes"
+  results_dir: "results"
+
+execution:
+  conda_env: "MGE_finder"
+
+# Directories where input files are located
+# Change these paths to point to your genome directories
+input_sources:
+  - "/path/to/your/genomes/dir1"
+  - "/path/to/your/genomes/dir2"
+
+# Customizable file patterns for input files
+# If you don't want to specify the naming pattern - it would be specified by default
+# And you can find mappings in the log file of prepare_fasta step then
+ncbi_pattern: "*_genomic.fna"              
+hybracter_pattern: "barcode*.fastq_final.fasta"
+
+# Pfam profiles for integrase search
+# NB: you can add and use your own profiles for integrases
+# Place your Pfam HMM files in the pfam/ directory
+pfam_profiles:
+  - "pfam/PF00589.hmm"
+  - "pfam/PF22022.hmm"
+

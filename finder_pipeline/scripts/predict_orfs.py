@@ -26,7 +26,6 @@ def predict_with_prodigal(fna_path, gff_path, ffn_path, faa_path):
     os.makedirs(os.path.dirname(ffn_path), exist_ok=True)
     os.makedirs(os.path.dirname(faa_path), exist_ok=True)
 
-    # Build the Prodigal command
     cmd = [
         "prodigal",
         "-i", fna_path,
@@ -45,7 +44,7 @@ def predict_with_prodigal(fna_path, gff_path, ffn_path, faa_path):
         log.info(f"FFN file created: {ffn_path}")
         log.info(f"FAA file created: {faa_path}")
     except subprocess.CalledProcessError as e:
-        log.error(f"[✗] Error in Prodigal execution: {e}")
+        log.error(f" Error in Prodigal execution: {e}")
         raise
 
 

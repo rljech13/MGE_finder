@@ -3,7 +3,7 @@
 ###############################################################################
 
 import os, glob, sys, re, tempfile
-sys.path.append("../../scripts")           # кастомный логгер лежит на 2 уровня выше
+sys.path.append("../../finder_pipeline/scripts")           # кастомный логгер лежит на 2 уровня выше
 from logger import Logger
 
 logger = Logger(name="mge_cluster",

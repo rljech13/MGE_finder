@@ -12,11 +12,11 @@
 ###############################################################################
 
 import sys, pathlib, yaml
-sys.path.append("../../scripts")
+sys.path.append("../../finder_pipeline/scripts")
 from logger import Logger
 
 # ──────────────────── конфиг ────────────────────────────────────────────────
-configfile: "vcontact_config.yaml"
+configfile: "/home/lam34/MGE_finder/classification_investigation/vcontact/vcontact_config.yaml"
 
 REP_MGE_NT    = pathlib.Path(config["paths"]["rep_mge_fasta"])
 OUTPUT_DIR    = pathlib.Path(config["paths"]["output_dir"])
@@ -26,7 +26,7 @@ LOGS_DIR = OUTPUT_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 logger = Logger("vcontact3_pipeline", True, True).get_logger()
 
-# ──────────────────── правила ───────────────────────────────────────────────
+# ──────────────────── 
 rule all:
     input:
         directory(OUTPUT_DIR / "vcontact3_out")
@@ -40,16 +40,18 @@ rule run_vcontact3:
         LOGS_DIR / "vcontact3.log"
     threads: 16
     conda:
-        CONDA_ENV            # активируем env с vcontact3
+        CONDA_ENV
     shell:
         """
         mkdir -p {output} $(dirname {log})
-        vcontact3 run\
-          --nucleotide  {input.fasta} \
-          --output     {output} \
-          --threads        {threads} \
-          --db-path /home/lam34/vcontactdb \
-          --db-version 228 \
-          --db-domain prokaryotes \          # надо сделать этот параметр изменяемым через конфиг 
-          &> {log}
+        echo ">>> INPUT FASTA: {input.fasta}" 1>&2
+        echo ">>> PWD: $(pwd)" 1>&2
+        vcontact3 run \
+            --nucleotide {input.fasta} \
+            --output     {output} \
+            --threads    {threads} \
+            --db-path    /home/lam34/vcontactdb \
+            --db-version 228 \
+            --db-domain  prokaryotes \
+            --exports   cytoscape graphml cosmograph profiles completeness 
         """

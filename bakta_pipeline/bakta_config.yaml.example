@@ -1,7 +1,7 @@
 paths:
   input_dir: ../finder_pipeline/results                 
   output_dir: ../bakta_pipeline/results_bakta         
-  db: /home/lam34/bakta_db/db
+  db: /path/to/bakta/db
   log_dir: ../bakta_pipeline/results_bakta
   genomes_dir: ../finder_pipeline/data/genomes
 
@@ -14,3 +14,4 @@ params:
   bakta_env: "bakta"
   merge_env: "MGE_finder"
   clean_empty_err: true
+

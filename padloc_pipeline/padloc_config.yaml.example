@@ -1,0 +1,9 @@
+paths:
+  input_dir: ../finder_pipeline/results
+  output_dir: padloc_pipeline/results
+  logger_dir: finder_pipeline/scripts
+  run_padloc_script: padloc_pipeline/scripts/padloc_wrapper.py
+
+execution:
+  conda_env: padloc
+

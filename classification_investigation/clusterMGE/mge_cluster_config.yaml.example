@@ -1,0 +1,17 @@
+# Path to GBK files with annotated MGEs
+# Use absolute path or relative path from this directory
+paths:
+  mge_gbk_pattern: "../finder_pipeline/results/*/mge_annotated.gbk"
+
+execution:
+  conda_env: "MGE_finder"  # MMseqs2, Biopython, Snakemake
+
+mmseqs:
+  results_dir:      "results_mge"          # all outputs go here
+  tmp_dir:          "results_mge/tmp"
+  db_prefix:        "results_mge/mge_db"
+  cluster_prefix:   "results_mge/mge_cluster"
+  repdb_prefix:     "results_mge/mge_repdb"
+  min_seq_id:       0.9                   # ≥ 90% identity
+  coverage:         0.95                  # ≥ 95% coverage
+

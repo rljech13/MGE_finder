@@ -1,9 +1,7 @@
-# Here we state the names of directories 
 paths:
   genomes_dir: "data/genomes"
   results_dir: "results"
 
-# Here we define the name of conda envs used
 execution:
   conda_env: "MGE_finder"
 

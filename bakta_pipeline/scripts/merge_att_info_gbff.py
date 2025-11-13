@@ -18,7 +18,8 @@ PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "../.."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from scripts.logger import Logger as LoggerWrapper
+sys.path.append("../finder_pipeline/scripts")
+from logger import Logger as LoggerWrapper
 
 warnings.filterwarnings("ignore", category=BiopythonWarning)
 

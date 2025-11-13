@@ -1,0 +1,9 @@
+paths:
+  # Path to representative MGE sequences from clustering step
+  rep_mge_fasta: "../clusterMGE/results_mge/rep_mge_nt.fa"
+  # Output directory for vContact results
+  output_dir: "results_vcontact"
+
+execution:
+  conda_env: "vContact3"  # conda environment with vContact2/vContact3 and dependencies
+

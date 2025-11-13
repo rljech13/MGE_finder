@@ -1,6 +1,6 @@
 # Где лежат GBK с аннотированными MGE
 paths:
-  mge_gbk_pattern: "/home/lam34/MGE_finder/results/*/mge_annotated.gbk"
+  mge_gbk_pattern: "/home/lam34/MGE_finder/finder_pipeline/results/*/mge_annotated.gbk"
 
 execution:
   conda_env: "MGE_finder"          # MMseqs2, Biopython, Snakemake

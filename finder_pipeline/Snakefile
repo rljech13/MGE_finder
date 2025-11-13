@@ -2,9 +2,9 @@ import os
 import yaml
 import glob
 
-CONFIG_PATH = "/home/lam34/MGE_finder/config.yaml"
-with open(CONFIG_PATH) as f:
-    config = yaml.safe_load(f)
+
+#--------Config
+configfile: "finder_config.yaml"
 
 GENOMES_DIR = config["paths"]["genomes_dir"]
 RESULTS_DIR = config["paths"]["results_dir"]
@@ -13,6 +13,8 @@ PFAM_ARGS = " ".join(PFAM_LIST)
 ENV = config["execution"]["conda_env"]
 
 COMBINED_HMM = os.path.join(RESULTS_DIR, "combined", "pfam_combined.hmm")
+#--------------
+
 
 def get_samples():
     fasta_files = glob.glob(os.path.join(GENOMES_DIR, "*.fna"))
