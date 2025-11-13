@@ -4,7 +4,7 @@ MGE Finder is a modular and extensible Snakemake-based pipeline system for detec
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Project Structure](#project-structure)
 - [Installation](#installation)
@@ -22,7 +22,7 @@ MGE Finder is a modular and extensible Snakemake-based pipeline system for detec
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 MGE_finder/
@@ -146,7 +146,7 @@ See [SETUP.md](SETUP.md) for detailed configuration instructions.
 
 ---
 
-## 🧩 Modules Overview
+##  Modules Overview
 
 ### 1. Finder Pipeline
 
@@ -451,7 +451,7 @@ killall wget
 
 ---
 
-## 🔧 Additional Scripts
+##  Additional Scripts
 
 ### Statistics Collection
 
@@ -485,7 +485,7 @@ python finder_pipeline/scripts/defense_summary.py \
 
 ---
 
-## 📊 Output Files
+## Output Files
 
 ### Finder Pipeline Outputs
 
@@ -510,7 +510,7 @@ Per sample in `finder_pipeline/results/{sample}/`:
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### Customizing Distance Thresholds
 
@@ -541,7 +541,7 @@ snakemake build_combined_hmm
 
 ---
 
-## 📝 Requirements
+##  Requirements
 
 ### Core Dependencies
 
@@ -563,7 +563,7 @@ snakemake build_combined_hmm
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Snakemake Lock Issues
 
@@ -585,14 +585,14 @@ Check log files in `logs/` directories for detailed error messages.
 
 ---
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - **Finder Pipeline Details**: See `finder_pipeline/README_finder.md`
 - **vContact Notes**: See `classification_investigation/vcontact/README.md`
 
 ---
 
-## 🔄 Workflow Order
+##  Workflow Order
 
 Recommended execution order:
 
@@ -605,19 +605,19 @@ Recommended execution order:
 
 ---
 
-## 📄 License
+##  License
 
-[Add license information if applicable]
+
+*Under condtruction*
+---
+
+##  Contributors
+
+*Under constructruction*
 
 ---
 
-## 👥 Contributors
-
-[Add contributor information if applicable]
-
----
-
-## 🔗 References
+##  References
 
 - Prodigal: https://github.com/hyattpd/Prodigal
 - HMMER: http://hmmer.org/
