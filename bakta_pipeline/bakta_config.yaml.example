@@ -1,17 +1,17 @@
 paths:
-  input_dir: ../finder_pipeline/results                 
-  output_dir: ../bakta_pipeline/results_bakta         
-  db: /path/to/bakta/db
-  log_dir: ../bakta_pipeline/results_bakta
-  genomes_dir: ../finder_pipeline/data/genomes
+  input_dir: ../IE_finder/results_deinococcales
+  output_dir: results_bakta_deinococcales
+  log_dir: results_bakta_deinococcales
+  genomes_dir: ../IE_finder/data/genomes
+  # Optional if you export BAKTA_DB (see README); absolute path is fine
+  db: ""
 
 scripts:
-  merge_att: ../bakta_pipeline/scripts/merge_att_info_gbff.py
+  merge_att: scripts/merge_att_info_gbff.py
 
 params:
   threads: 32
   prefix: annotation
   bakta_env: "bakta"
-  merge_env: "MGE_finder"
+  merge_env: "IE_finder"
   clean_empty_err: true
-

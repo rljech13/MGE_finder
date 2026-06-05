@@ -4,7 +4,7 @@ import glob
 
 
 #--------Config
-configfile: "finder_config.yaml"
+configfile: "ie_finder_config.yaml"
 
 GENOMES_DIR = config["paths"]["genomes_dir"]
 RESULTS_DIR = config["paths"]["results_dir"]
@@ -56,7 +56,7 @@ rule prepare_fasta:
     conda:
         f"{ENV}"
     params:
-        config_path=config["paths"].get("config_file", "finder_config.yaml")
+        config_path=config["paths"].get("config_file", "ie_finder_config.yaml")
     shell:
         """
         python scripts/prepare_fastas.py --config {params.config_path} > {log} 2>&1
@@ -234,7 +234,7 @@ rule filter_confident_ie:
         mge_fa=os.path.join(RESULTS_DIR, "{sample}", "mge_region.fa"),
         mge_gbk=os.path.join(RESULTS_DIR, "{sample}", "mge_annotated.gbk"),
         orfs_gff=os.path.join(RESULTS_DIR, "{sample}", "orfs.gff"),
-        config=config["paths"].get("config_file", "finder_config.yaml"),
+        config=config["paths"].get("config_file", "ie_finder_config.yaml"),
     output:
         fa=os.path.join(RESULTS_DIR, "{sample}", "ie_confident.fa"),
         gbk=os.path.join(RESULTS_DIR, "{sample}", "ie_confident.gbk"),
@@ -266,7 +266,7 @@ rule dedup_ie_representatives:
             os.path.join(RESULTS_DIR, "{sample}", "ie_confident.fa"),
             sample=SAMPLES,
         ),
-        config=config["paths"].get("config_file", "finder_config.yaml"),
+        config=config["paths"].get("config_file", "ie_finder_config.yaml"),
     output:
         rep_fa=os.path.join(RESULTS_DIR, "dedup", "ie_representatives.fa"),
         rep_gbk=os.path.join(RESULTS_DIR, "dedup", "ie_representatives.gbk"),

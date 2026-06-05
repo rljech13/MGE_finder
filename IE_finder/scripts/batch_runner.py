@@ -302,7 +302,7 @@ def main():
     )
     parser.add_argument(
         "--snakemake-config",
-        default="finder_config.yaml",
+        default="ie_finder_config.yaml",
         help="Config file passed to Snakemake when the command is built automatically.",
     )
     parser.add_argument(

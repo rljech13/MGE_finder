@@ -26,7 +26,7 @@ def load_thresholds(config_path: Path | None) -> FilterThresholds:
     """Load filter thresholds from a finder pipeline YAML configuration file.
 
     Args:
-        config_path: Path to ``finder_config.yaml``, or None to use defaults.
+        config_path: Path to ``ie_finder_config.yaml``, or None to use defaults.
 
     Returns:
         ``FilterThresholds`` instance populated from the configuration file.
@@ -240,7 +240,7 @@ def main() -> None:
     parser.add_argument("--mge-fa", required=True, help="Path to mge_region.fa.")
     parser.add_argument("--mge-gbk", required=True, help="Path to mge_annotated.gbk.")
     parser.add_argument("--orfs-gff", required=True, help="Path to orfs.gff.")
-    parser.add_argument("--config", default="finder_config.yaml", help="Pipeline config.")
+    parser.add_argument("--config", default="ie_finder_config.yaml", help="Pipeline config.")
     parser.add_argument("--out-fa", required=True, help="Output ie_confident.fa path.")
     parser.add_argument("--out-gbk", required=True, help="Output ie_confident.gbk path.")
     parser.add_argument("--out-audit", required=True, help="Output ie_filter_audit.tsv path.")

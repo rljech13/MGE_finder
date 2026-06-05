@@ -1,6 +1,6 @@
 # End-to-end stress test panel
 
-Six genomes selected to exercise known edge cases in `finder_pipeline`:
+Six genomes selected to exercise known edge cases in `IE_finder`:
 
 | Sample | Source | Stress case |
 |--------|--------|-------------|
@@ -14,6 +14,6 @@ Six genomes selected to exercise known edge cases in `finder_pipeline`:
 Run:
 
 ```bash
-cd finder_pipeline
-CONFIG=e2e_test/finder_config_e2e.yaml ./run.sh --cores=6
+cd IE_finder
+CONFIG=e2e_test/ie_finder_config_e2e.yaml ./run.sh --cores=6
 ```

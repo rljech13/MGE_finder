@@ -1,11 +1,11 @@
-"""Unit tests for finder_pipeline sequence QC helpers."""
+"""Unit tests for IE_finder sequence QC helpers."""
 import tempfile
 import unittest
 from pathlib import Path
 
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "finder_pipeline" / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "IE_finder" / "scripts"))
 
 from sequence_qc import fasta_contains_ambiguous_n, parse_fasta_lengths_and_n_flags
 

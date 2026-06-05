@@ -1,15 +1,20 @@
-# MGE Finder: Comprehensive Pipeline for Mobile Genetic Element Discovery and Analysis
+# IE_finder
 
-MGE Finder is a modular and extensible Snakemake-based pipeline system for detecting, annotating, and analyzing Mobile Genetic Elements (MGEs) in prokaryotic genomes. The project integrates multiple analysis modules including ORF prediction, HMM-based domain search, tRNA detection, BLAST-based boundary detection, GenBank annotation, defense system detection, and comparative genomics.
+IE_finder is a Snakemake-based workflow for discovering **integrative elements (IEs)** in prokaryotic genomes. The repository also contains downstream analysis modules (Bakta annotation, defense-system screening, clustering, classification) built around the core IE discovery pipeline.
+
+**Core pipeline documentation:** [IE_finder/README.md](IE_finder/README.md)
+
+**Project map (directories, notebooks, archived notes):** see [docs/NAVIGATION.md](docs/NAVIGATION.md).
 
 ---
 
 ## Table of Contents
 
+- [Project navigation (`docs/NAVIGATION.md`)](docs/NAVIGATION.md)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Modules Overview](#modules-overview)
-  - [1. Finder Pipeline](#1-finder-pipeline)
+  - [1. IE_finder Pipeline](#1-ie_finder-pipeline)
   - [2. Bakta Pipeline](#2-bakta-pipeline)
   - [3. PADLOC Pipeline](#3-padloc-pipeline)
   - [4. MGE Clustering](#4-mge-clustering)
@@ -25,64 +30,22 @@ MGE Finder is a modular and extensible Snakemake-based pipeline system for detec
 ##  Project Structure
 
 ```
-MGE_finder/
-├── finder_pipeline/          # Main MGE detection pipeline
-│   ├── Snakefile
-│   ├── finder_config.yaml
-│   ├── run.sh
-│   ├── scripts/              # Python scripts for pipeline steps
-│   ├── data/genomes/         # Input genome FASTA files
-│   └── results/              # Output results
-│
-├── bakta_pipeline/           # Bakta annotation pipeline
-│   ├── Snakefile
-│   ├── bakta_config.yaml
-│   ├── run_bakta.sh
-│   └── results_bakta/
-│
-├── padloc_pipeline/          # PADLOC defense system detection
-│   ├── Snakefile
-│   ├── padloc_config.yaml
-│   ├── run_padloc.sh
-│   └── results/
-│
+MGE_finder/                   # repository root (GitHub clone directory)
+├── docs/
+├── IE_finder/                # core IE discovery pipeline
+│   ├── Snakefile, ie_finder_config.yaml, run.sh
+│   ├── scripts/
+│   ├── data/                 # input genomes (git-ignored)
+│   └── results/              # pipeline outputs (git-ignored)
+├── bakta_pipeline/
+├── padloc_pipeline/
+├── results_organized/
 ├── classification_investigation/
-│   ├── clusterMGE/           # MGE clustering with MMseqs2
-│   │   ├── Snakefile
-│   │   ├── mge_cluster_config.yaml
-│   │   └── run_mge_cluster.sh
-│   └── vcontact/             # vContact2/vContact3 classification
-│       ├── Snakefile
-│       ├── vcontact_config.yaml
-│       └── run_vcontact.sh
-│
-├── protein_clusterization/   # Protein clustering with MMseqs2
-│   ├── Snakefile
-│   ├── classification_config.yaml
-│   └── run_clusterization.sh
-│
-├── refseq_prokaryote/        # RefSeq database download scripts
-│   ├── download_genomes_only.sh
-│   ├── bacteria/             # Downloaded bacterial genomes
-│   └── archaea/             # Downloaded archaeal genomes
-│
-├── analysis/                 # Analysis scripts and results
-│   ├── stats.py
-│   ├── statistics/
-│   └── plots/
-│
-├── additionals/              # Additional utility scripts
-│   ├── run_padloc_parallel.sh
-│   └── collect_reps.py
-│
-├── pfam/                     # Pfam HMM profiles
-│   ├── PF00589.hmm
-│   └── PF22022.hmm
-│
-├── envs/
-│   └── MGE_finder.yaml       # Conda environment definition
-│
-└── README.md                 # This file
+├── protein_clusterization/
+├── data/
+├── pfam/
+├── envs/IE_finder.yaml
+└── README.md, SETUP.md
 ```
 
 ---
@@ -112,8 +75,8 @@ cd MGE_finder
 2. **Create the main conda environment:**
 
 ```bash
-mamba env create -f envs/MGE_finder.yaml
-conda activate MGE_finder
+mamba env create -f envs/IE_finder.yaml
+conda activate IE_finder
 ```
 
 3. **Install additional dependencies for specific modules:**
@@ -131,10 +94,10 @@ Place your Pfam HMM profiles (e.g., `PF00589.hmm`, `PF22022.hmm`) in the `pfam/`
 Copy example configuration files and edit them with your paths:
 
 ```bash
-# Finder pipeline
-cd finder_pipeline
-cp finder_config.yaml.example finder_config.yaml
-# Edit finder_config.yaml with your paths
+# IE_finder pipeline
+cd IE_finder
+cp ie_finder_config.yaml.example ie_finder_config.yaml
+# Edit ie_finder_config.yaml with your paths
 
 # Other pipelines similarly
 cd ../bakta_pipeline
@@ -148,9 +111,9 @@ See [SETUP.md](SETUP.md) for detailed configuration instructions.
 
 ##  Modules Overview
 
-### 1. Finder Pipeline
+### 1. IE_IE_finder pipeline
 
-**Location:** `finder_pipeline/`
+**Location:** `IE_finder/`
 
 **Purpose:** Main pipeline for detecting MGEs integrating into tRNA genes. Screens genomes for integrases, identifies nearby tRNAs, extracts MGE regions, and annotates attachment sites.
 
@@ -169,9 +132,9 @@ See [SETUP.md](SETUP.md) for detailed configuration instructions.
 | `extract_mge_region` | Extracts full MGE candidate regions | `mge_region.fa` |
 | `annotate_mge` | Annotates MGE regions in GenBank format | `mge_annotated.gbk`, `attachment_sites.tsv` |
 
-**Configuration:** `finder_config.yaml`
+**Configuration:** `ie_finder_config.yaml`
 
-Copy `finder_config.yaml.example` to `finder_config.yaml` and edit:
+Copy `ie_finder_config.yaml.example` to `ie_finder_config.yaml` and edit:
 
 ```yaml
 paths:
@@ -179,7 +142,7 @@ paths:
   results_dir: "results"
 
 execution:
-  conda_env: "MGE_finder"
+  conda_env: "IE_finder"
 
 input_sources:
   - "/path/to/genomes/dir1"
@@ -193,7 +156,7 @@ pfam_profiles:
 **Run:**
 
 ```bash
-cd finder_pipeline
+cd IE_finder
 bash run.sh
 ```
 
@@ -232,33 +195,36 @@ conda activate bakta
 
 **Configuration:** `bakta_config.yaml`
 
-Copy `bakta_config.yaml.example` to `bakta_config.yaml` and edit:
+Copy `bakta_config.yaml.example` to `bakta_config.yaml` and edit paths. Directories under `paths` are **relative to `bakta_pipeline/`** unless you use an absolute path. The Bakta database can be set as `paths.db` or via `BAKTA_DB` (the environment variable wins if set).
 
 ```yaml
 paths:
-  input_dir: ../finder_pipeline/results
-  output_dir: ../bakta_pipeline/results_bakta
-  db: /path/to/bakta/db
-  genomes_dir: ../finder_pipeline/data/genomes
+  input_dir: ../IE_finder/results_deinococcales
+  output_dir: results_bakta_deinococcales
+  genomes_dir: ../IE_finder/data/genomes
+  db: ""
 
 params:
   threads: 32
   prefix: annotation
   bakta_env: "bakta"
-  merge_env: "MGE_finder"
+  merge_env: "IE_finder"
 ```
+
+Thermaceae: use `bakta_config_thermaceae.yaml` (e.g. `CONFIG=bakta_config_thermaceae.yaml bash run_bakta.sh`).
 
 **Run:**
 
 ```bash
 cd bakta_pipeline
+export BAKTA_DB=/path/to/bakta_db   # if paths.db is empty
 bash run_bakta.sh
 ```
 
 **Outputs per sample:**
 - `annotation.gbff` - Bakta-annotated GenBank file
 - `annotation.faa` - Predicted protein sequences
-- `merged.gbff` - Merged annotation with MGE attachment sites
+- `annotation.gbff.merged` - Merged annotation with MGE attachment sites (`merge_att` rule)
 
 ---
 
@@ -278,16 +244,20 @@ padloc download_db  # Download PADLOC database
 
 **Configuration:** `padloc_config.yaml`
 
-Copy `padloc_config.yaml.example` to `padloc_config.yaml` and edit:
+Copy `padloc_config.yaml.example` to `padloc_config.yaml` and edit. Paths under `paths` are **relative to `padloc_pipeline/`** unless absolute.
 
 ```yaml
 paths:
-  input_dir: ../finder_pipeline/results
-  output_dir: padloc_pipeline/results
+  input_dir: ../IE_finder/results_deinococcales
+  output_dir: results_deinococcales
+  logger_dir: ../IE_finder/scripts
+  run_padloc_script: scripts/padloc_wrapper.py
 
 execution:
   conda_env: padloc
 ```
+
+Thermaceae / whole-genome variants: `padloc_config_thermaceae.yaml`, `padloc_config_thermaceae_wholegenome.yaml` (e.g. `CONFIG=padloc_config_thermaceae.yaml bash run_padloc.sh`).
 
 **Run:**
 
@@ -297,17 +267,7 @@ bash run_padloc.sh
 ```
 
 **Outputs per sample:**
-- `results_padloc.csv` - Detected defense systems
-
-**Alternative: Parallel execution**
-
-For faster processing of many samples, use the parallel script:
-
-```bash
-bash additionals/run_padloc_parallel.sh
-```
-
-This script processes samples in parallel using GNU parallel and includes CRISPRDetect and Infernal preprocessing.
+- `{basename_of_output_dir}_padloc.csv` (e.g. `results_deinococcales_padloc.csv`) — detected defense systems
 
 ---
 
@@ -319,20 +279,26 @@ This script processes samples in parallel using GNU parallel and includes CRISPR
 
 **Configuration:** `mge_cluster_config.yaml`
 
-Copy `mge_cluster_config.yaml.example` to `mge_cluster_config.yaml` and edit:
+Copy `mge_cluster_config.yaml.example` to `mge_cluster_config.yaml` and edit. Glob patterns are **relative to `classification_investigation/clusterMGE/`** (or use absolute paths). Default inputs point at **`IE_finder/results_deinococcales`**.
+
+MMseqs2: Snakemake uses the `mmseqs` executable on `PATH` inside the conda env. To force a binary, set **`MMSEQS_BIN`**.
 
 ```yaml
 paths:
-  mge_gbk_pattern: "../finder_pipeline/results/*/mge_annotated.gbk"
+  mge_fasta_pattern: "../../IE_finder/results_deinococcales/*/mge_region.fa"
+  mge_gbk_pattern: "../../IE_finder/results_deinococcales/*/mge_annotated.gbk"
+  use_fasta: true
 
 execution:
-  conda_env: "MGE_finder"
+  conda_env: "IE_finder"
 
 mmseqs:
   results_dir: "results_mge"
-  min_seq_id: 0.9      # ≥90% identity
-  coverage: 0.95       # ≥95% coverage
+  min_seq_id: 0.9
+  coverage: 0.95
 ```
+
+For the merged **`results_organized`** layout, use `mge_cluster_config_organized.yaml` (e.g. `CONFIG=mge_cluster_config_organized.yaml bash run_mge_cluster.sh`).
 
 **Run:**
 
@@ -363,12 +329,15 @@ conda create -n vContact3 -c bioconda vcontact3
 
 **Configuration:** `vcontact_config.yaml`
 
-Copy `vcontact_config.yaml.example` to `vcontact_config.yaml` and edit:
+Copy `vcontact_config.yaml.example` to `vcontact_config.yaml` and edit. Paths under `paths` are **relative to `classification_investigation/vcontact/`** unless absolute.
+
+Set **`paths.vcontact_db_path`** or **`export VCONTACT_DB`** before running (environment variable is checked first in the Snakefile, then the YAML value).
 
 ```yaml
 paths:
-  rep_mge_fasta: "../clusterMGE/results_mge/rep_mge_nt.fa"
+  rep_mge_fasta: "../clusterMGE/results_mge/unique_mge_for_vcontact.fa"
   output_dir: "results_vcontact"
+  vcontact_db_path: "/path/to/vcontactdb"
 
 execution:
   conda_env: "vContact3"
@@ -393,13 +362,13 @@ bash run_vcontact.sh
 
 **Configuration:** `classification_config.yaml`
 
-Copy `classification_config.yaml.example` to `classification_config.yaml` and edit:
+Copy `classification_config.yaml.example` to `classification_config.yaml` and edit. The `proteins.pattern` glob is **relative to `protein_clusterization/`** unless absolute. MMseqs2: use the `mmseqs` from the conda env, or set **`MMSEQS_BIN`** to a specific binary (as in the MGE clustering Snakemake workflow).
 
 ```yaml
-conda_env: "MGE_finder"
+conda_env: "IE_finder"
 
 proteins:
-  pattern: "../bakta_pipeline/results_bakta/*/annotation.faa"
+  pattern: "../bakta_pipeline/results_bakta_deinococcales/*/annotation.faa"
 
 mmseqs:
   results_dir: "results"
@@ -455,26 +424,19 @@ killall wget
 
 ### Statistics Collection
 
-**Location:** `finder_pipeline/scripts/`
+**Location:** `IE_finder/scripts/`
 
-- `collect_mge_statistics.py` - Collects MGE statistics across all samples
-- `defense_summary.py` - Summarizes PADLOC defense system detections
+- `collect_mge_statistics.py` — агрегирует статистику MGE по всем сэмплам в каталоге результатов. Записывает три файла: `{prefix}_summary.tsv`, `{prefix}_details.tsv`, `{prefix}_overall.tsv`.
 
 **Usage:**
 
 ```bash
-# Collect MGE statistics
-python finder_pipeline/scripts/collect_mge_statistics.py \
-    --results_dir finder_pipeline/results \
-    --output mge_summary.tsv
-
-# Summarize defense systems
-python finder_pipeline/scripts/defense_summary.py \
-    --padloc_dir padloc_pipeline/results \
-    --out_per_sample defense_per_sample.tsv \
-    --out_overall defense_overall.tsv
+python IE_finder/scripts/collect_mge_statistics.py \
+    --results IE_finder/results \
+    --out-prefix results_organized/summary/mge
 ```
 
+Сводные таблицы PADLOC / defense (`defense_per_sample.tsv`, `defense_overall.tsv` и объединённые отчёты) хранятся рядом в [`results_organized/summary/`](results_organized/summary/). 
 ### Analysis Scripts
 
 **Location:** `analysis/`
@@ -487,9 +449,9 @@ python finder_pipeline/scripts/defense_summary.py \
 
 ## Output Files
 
-### Finder Pipeline Outputs
+### IE_IE_finder pipeline Outputs
 
-Per sample in `finder_pipeline/results/{sample}/`:
+Per sample in `IE_finder/results/{sample}/`:
 
 - `orfs.gff`, `orfs.ffn`, `orfs.faa` - ORF predictions
 - `integrase_hits.txt`, `integrase_hits_summary.tsv`, `integrase_orfs.tsv` - HMM results
@@ -501,12 +463,19 @@ Per sample in `finder_pipeline/results/{sample}/`:
 - `mge_annotated.gbk` - Annotated MGE regions (GenBank)
 - `attachment_sites.tsv` - Detected attL/attR coordinates
 
-### Summary Files (Root Directory)
+### Summary tables (repository default location)
 
-- `mge_summary.tsv` - Overall MGE statistics
-- `mge_overall.tsv` - Overall MGE counts
-- `defense_per_sample.tsv` - Defense systems per sample
-- `defense_overall.tsv` - Overall defense system frequencies
+Сводные TSV лежат в **`results_organized/summary/`** (их не держим в корне репозитория):
+
+| File | Role |
+|------|------|
+| `mge_summary.tsv` | По-геномная сводка элементов (статистика пайплайна) |
+| `mge_details.tsv` | Строка на каждый MGE |
+| `mge_overall.tsv` | Агрегированные итоги |
+| `mge_per_genome_stats.tsv` | Доп. агрегация по геномам (в т.ч. из аналитических скриптов) |
+| `defense_per_sample.tsv`, `defense_overall.tsv` | Сводки по системам защиты (PADLOC) |
+| `padloc_combined_results.tsv` | Объединённые результаты PADLOC |
+| `mge_extended_stats.txt` | Текстовая расширенная сводка (скрипт `extend_mge_statistics.py`) |
 
 ---
 
@@ -514,7 +483,7 @@ Per sample in `finder_pipeline/results/{sample}/`:
 
 ### Customizing Distance Thresholds
 
-In `finder_pipeline/Snakefile`, modify the `trna_proximity` rule:
+In `IE_finder/Snakefile`, modify the `trna_proximity` rule:
 
 ```python
 rule trna_proximity:
@@ -524,7 +493,7 @@ rule trna_proximity:
 
 ### Customizing BLAST Window Size
 
-In `finder_pipeline/scripts/annotate_mge_region.py`, modify:
+In `IE_finder/scripts/annotate_mge_region.py`, modify:
 
 ```python
 WINDOW_SIZE = 100000  # Change this value
@@ -532,10 +501,10 @@ WINDOW_SIZE = 100000  # Change this value
 
 ### Re-generating Combined HMM
 
-If you add/remove Pfam profiles, edit `finder_config.yaml` and rerun:
+If you add/remove Pfam profiles, edit `ie_finder_config.yaml` and rerun:
 
 ```bash
-cd finder_pipeline
+cd IE_finder
 snakemake build_combined_hmm
 ```
 
@@ -581,13 +550,14 @@ Check that input paths in configuration files are correct and files exist.
 
 ### Log Files
 
-Check log files in `logs/` directories for detailed error messages.
+During runs, logs accumulate under each pipeline’s `logs/` folder and the repo root `logs/`. These directories are gitignored and safe to delete or rotate when debugging is done; see [docs/NAVIGATION.md](docs/NAVIGATION.md).
 
 ---
 
 ##  Additional Resources
 
-- **Finder Pipeline Details**: See `finder_pipeline/README_finder.md`
+- **Directory map (RU)**: [docs/NAVIGATION.md](docs/NAVIGATION.md)
+- **IE_IE_finder pipeline Details**: See `IE_finder/README.md`
 - **vContact Notes**: See `classification_investigation/vcontact/README.md`
 
 ---
@@ -596,7 +566,7 @@ Check log files in `logs/` directories for detailed error messages.
 
 Recommended execution order:
 
-1. **Finder Pipeline** - Detect and annotate MGEs
+1. **IE_IE_finder pipeline** - Detect and annotate MGEs
 2. **Bakta Pipeline** - Annotate MGE regions with Bakta
 3. **PADLOC Pipeline** - Detect defense systems
 4. **MGE Clustering** - Cluster MGE sequences
@@ -607,13 +577,13 @@ Recommended execution order:
 
 ##  License
 
+*Under construction*
 
-*Under condtruction*
 ---
 
 ##  Contributors
 
-*Under constructruction*
+*Under construction*
 
 ---
 

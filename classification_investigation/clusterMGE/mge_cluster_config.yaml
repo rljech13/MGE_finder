@@ -1,15 +1,17 @@
-# Где лежат GBK с аннотированными MGE
+# Где лежат FASTA с MGE последовательностями (пути относительно каталога clusterMGE/)
 paths:
-  mge_gbk_pattern: "/home/lam34/MGE_finder/finder_pipeline/results/*/mge_annotated.gbk"
+  mge_fasta_pattern: "../../IE_finder/results_deinococcales/*/mge_region.fa"
+  mge_gbk_pattern: "../../IE_finder/results_deinococcales/*/mge_annotated.gbk"
+  use_fasta: true
 
 execution:
-  conda_env: "MGE_finder"          # MMseqs2, Biopython, Snakemake
+  conda_env: "IE_finder"
 
 mmseqs:
-  results_dir:      "results_mge"          # все выходы сюда
+  results_dir:      "results_mge"
   tmp_dir:          "results_mge/tmp"
   db_prefix:        "results_mge/mge_db"
   cluster_prefix:   "results_mge/mge_cluster"
   repdb_prefix:     "results_mge/mge_repdb"
-  min_seq_id:       0.9                   # ≥ 90 % идентичности
-  coverage:         0.95                  # ≥ 95 % покрытия
+  min_seq_id:       0.9
+  coverage:         0.95

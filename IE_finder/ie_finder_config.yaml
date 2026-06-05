@@ -1,11 +1,11 @@
 paths:
-  config_file: "finder_config.yaml"
+  config_file: "ie_finder_config.yaml"
   genomes_dir: "data/genomes"
   results_dir: "results"
 
 execution:
-  # Path relative to finder_pipeline/ (Snakemake --use-conda)
-  conda_env: "../envs/MGE_finder.yaml"
+  # Path relative to IE_finder/ (Snakemake --use-conda)
+  conda_env: "../envs/IE_finder.yaml"
 
 input_sources:
   - "data/genomes"

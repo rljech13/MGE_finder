@@ -1,11 +1,11 @@
 paths:
-  config_file: "finder_config.yaml"
+  config_file: "ie_finder_config.yaml"
   genomes_dir: "data/genomes"
   results_dir: "results"
 
 execution:
-  # Either a conda env name or a path to envs/MGE_finder.yaml (relative to finder_pipeline/)
-  conda_env: "../envs/MGE_finder.yaml"
+  # Either a conda env name or a path to envs/IE_finder.yaml (relative to IE_finder/)
+  conda_env: "../envs/IE_finder.yaml"
 
 # Directories searched recursively for input assemblies
 input_sources:
@@ -35,7 +35,7 @@ dedup:
   min_seq_id: 0.9
   min_coverage: 0.8
 
-# Pfam HMM profiles for integrase detection (paths relative to finder_pipeline/)
+# Pfam HMM profiles for integrase detection (paths relative to IE_finder/)
 pfam_profiles:
   - "../pfam/PF00589.hmm"
   - "../pfam/PF22022.hmm"

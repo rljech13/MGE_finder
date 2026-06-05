@@ -1,6 +1,8 @@
-# Setup Guide for MGE Finder
+# Setup Guide for IE_finder
 
-This guide will help you set up MGE Finder from scratch.
+> **TODO (refresh needed):** Пройтись по путям, версиям conda/Snakemake и шагам окружений (Bakta, PADLOC, vContact) в соответствии с текущим деревом репозитория и [`docs/NAVIGATION.md`](docs/NAVIGATION.md). Этот файл оставлен как опорный скелет.
+
+This guide will help you set up IE_finder from scratch.
 
 ## Prerequisites
 
@@ -12,14 +14,14 @@ This guide will help you set up MGE Finder from scratch.
 
 ```bash
 git clone <repository-url>
-cd MGE_finder
+cd IE_finder
 ```
 
 ## Step 2: Create Conda Environment
 
 ```bash
-mamba env create -f envs/MGE_finder.yaml
-conda activate MGE_finder
+mamba env create -f envs/IE_finder.yaml
+conda activate IE_finder
 ```
 
 ## Step 3: Install Additional Dependencies
@@ -63,16 +65,16 @@ wget https://www.ebi.ac.uk/interpro/wwwapi/entry/pfam/PF22022/hmm -O pfam/PF2202
 
 ## Step 5: Configure Pipelines
 
-### Finder Pipeline
+### IE_IE_finder pipeline
 
 ```bash
-cd finder_pipeline
-cp finder_config.yaml.example finder_config.yaml
-# Edit finder_config.yaml with your paths
-nano finder_config.yaml
+cd IE_finder
+cp ie_finder_config.yaml.example ie_finder_config.yaml
+# Edit ie_finder_config.yaml with your paths
+nano ie_finder_config.yaml
 ```
 
-Update the following in `finder_config.yaml`:
+Update the following in `ie_finder_config.yaml`:
 - `input_sources`: Paths to your genome directories
 - `pfam_profiles`: Paths to your Pfam HMM files
 
@@ -98,7 +100,7 @@ Similarly, copy and configure:
 
 ## Step 6: Prepare Input Genomes
 
-Place your genome FASTA files in the directories specified in `finder_config.yaml` under `input_sources`.
+Place your genome FASTA files in the directories specified in `ie_finder_config.yaml` under `input_sources`.
 
 Supported formats:
 - NCBI format: `*_genomic.fna`

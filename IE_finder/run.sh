@@ -5,11 +5,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-CONFIG="${CONFIG:-finder_config.yaml}"
+CONFIG="${CONFIG:-ie_finder_config.yaml}"
 CORES=$(nproc)
 SNAKEFILE="Snakefile"
 WORKDIR=$(pwd)
-# каталог окружений для snakemake --use-conda (переопределить: export SNAKEMAKE_CONDA_PREFIX=...)
+# Conda env prefix for snakemake --use-conda (override: export SNAKEMAKE_CONDA_PREFIX=...)
 CONDAP="${SNAKEMAKE_CONDA_PREFIX:-${MINIFORGE_ENVS:-$HOME/miniforge3/envs}}"
 
 # === COLORS ===

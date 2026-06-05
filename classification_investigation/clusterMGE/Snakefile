@@ -3,17 +3,25 @@
 ###############################################################################
 
 import os, glob, sys, re, tempfile
-sys.path.append("../../finder_pipeline/scripts")           # кастомный логгер лежит на 2 уровня выше
-from logger import Logger
+from pathlib import Path
 
-logger = Logger(name="mge_cluster",
+WORKDIR = Path(workflow.snakefile).parent.resolve()
+sys.path.insert(0, str(WORKDIR.parent.parent / "IE_finder" / "scripts"))
+from logger import Logger as CustomLogger
+
+# Prefer `mmseqs` on PATH; set MMSEQS_BIN to override (e.g. /path/to/mmseqs).
+MMSEQS = os.environ.get("MMSEQS_BIN", "mmseqs")
+
+custom_logger = CustomLogger(name="mge_cluster",
                 log_to_console=True,
                 log_to_file=True).get_logger()
 
 # ──────────────────────────────  CONFIG  ─────────────────────────────────── #
 configfile: "mge_cluster_config.yaml"
 
-GBK_GLOB   = config["paths"]["mge_gbk_pattern"]          # .../results/*/mge_annotated.gbk
+USE_FASTA = config["paths"].get("use_fasta", True)  # По умолчанию использовать FASTA
+FASTA_GLOB = config["paths"].get("mge_fasta_pattern", "")
+GBK_GLOB   = config["paths"].get("mge_gbk_pattern", "")
 CONDA_ENV  = config["execution"]["conda_env"]
 
 RES_DIR    = config["mmseqs"]["results_dir"]
@@ -35,10 +43,21 @@ REP_FASTA      = os.path.join(RES_DIR, "rep_mge_nt.fa")
 LOGS_DIR       = os.path.join(RES_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-GBK_FILES = sorted(glob.glob(GBK_GLOB))
-if not GBK_FILES:
-    sys.exit(f"No mge_annotated.gbk found by pattern: {GBK_GLOB}")
-logger.info(f"Found {len(GBK_FILES)} annotated GBKs")
+# Выбираем источник данных
+if USE_FASTA and FASTA_GLOB:
+    FASTA_FILES = sorted([f for f in glob.glob(FASTA_GLOB) if os.path.getsize(f) > 0])
+    if not FASTA_FILES:
+        sys.exit(f"No mge_region.fa found by pattern: {FASTA_GLOB}")
+    custom_logger.info(f"Using FASTA files: Found {len(FASTA_FILES)} MGE FASTA files")
+    INPUT_FILES = FASTA_FILES
+    INPUT_TYPE = "fasta"
+else:
+    GBK_FILES = sorted(glob.glob(GBK_GLOB))
+    if not GBK_FILES:
+        sys.exit(f"No mge_annotated.gbk found by pattern: {GBK_GLOB}")
+    custom_logger.info(f"Using GBK files: Found {len(GBK_FILES)} annotated GBKs")
+    INPUT_FILES = GBK_FILES
+    INPUT_TYPE = "gbk"
 
 # ─────────────────────────────  RULE all  ────────────────────────────────── #
 rule all:
@@ -49,33 +68,48 @@ rule all:
 
 
 
-# ───────────────  EXTRACT FASTA FROM GBK  (fixed)  ───────────────────────── #
-rule gbk_to_fasta:
-    input:  GBK_FILES
+# ───────────────  COMBINE FASTA FILES  ───────────────────────── #
+rule combine_fasta:
+    input:  INPUT_FILES
     output: COMBINED_FASTA
-    log:    f"{LOGS_DIR}/gbk_to_fasta.log"
+    log:    f"{LOGS_DIR}/combine_fasta.log"
     conda:  CONDA_ENV
     shell:
         r"""
         mkdir -p $(dirname {output}) $(dirname {log})
-        python - << 'PY' "{input}" "{output}" "{log}"
-import sys, pathlib, Bio.SeqIO as b
-gbks   = sys.argv[1].split()
-out_fa = sys.argv[2]
-log_f  = sys.argv[3]
+        python - << PY
+import sys, pathlib, glob
+from Bio import SeqIO
+
+input_type = "{INPUT_TYPE}"
+fasta_pattern = "{FASTA_GLOB}"
+gbk_pattern = "{GBK_GLOB}"
+out_fa = "{output}"
+log_f = "{log}"
+
+# Получаем список файлов через glob, чтобы избежать проблем с длиной командной строки
+if input_type == "fasta":
+    files = sorted([f for f in glob.glob(fasta_pattern) if pathlib.Path(f).stat().st_size > 0])
+    file_format = "fasta"
+else:
+    files = sorted(glob.glob(gbk_pattern))
+    file_format = "genbank"
 
 n = 0
 with open(out_fa, "w") as fo:
-    for gbk in gbks:
-        sample = pathlib.Path(gbk).parent.name
-        for rec in b.parse(gbk, "genbank"):
-            rec.id = f"{{rec.id}}|sample={{sample}}"      # ← скобки удвоены
-            rec.description = ""
-            b.FastaIO.FastaWriter(fo, wrap=None).write_record(rec)
-            n += 1
+    for file_path in files:
+        sample = pathlib.Path(file_path).parent.name
+        try:
+            for rec in SeqIO.parse(file_path, file_format):
+                rec.id = rec.id + "|sample=" + sample
+                rec.description = ""
+                SeqIO.write(rec, fo, "fasta")
+                n += 1
+        except Exception as e:
+            print("Error processing " + str(file_path) + ": " + str(e), file=sys.stderr)
 
 with open(log_f, "w") as lg:
-    lg.write(f"Extracted {{n}} records from {{len(gbks)}} GBK files\n")
+    lg.write("Processed " + str(n) + " records from " + str(len(files)) + " " + input_type.upper() + " files\n")
 PY
         """
 
@@ -86,7 +120,7 @@ rule mmseqs_createdb:
     log:    f"{LOGS_DIR}/mmseqs_createdb.log"
     conda:  CONDA_ENV
     shell:  """
-            mmseqs createdb {input} {DB_PREFIX} &> {log}
+            {MMSEQS} createdb {input} {DB_PREFIX} &> {log}
             """
 
 # ─────────────────────────  MMSEQS ∙ cluster  ───────────────────────────── #
@@ -97,7 +131,7 @@ rule mmseqs_cluster:
     params: tmp=TMP_DIR, id=MIN_ID, cov=COVERAGE
     conda:  CONDA_ENV
     shell:  """
-            mmseqs cluster {DB_PREFIX} {CLUSTER_PREFIX} {params.tmp} \
+            {MMSEQS} cluster {DB_PREFIX} {CLUSTER_PREFIX} {params.tmp} \
                    --min-seq-id {params.id} -c {params.cov} --seq-id-mode 1 &> {log}
             """
 
@@ -108,7 +142,7 @@ rule mmseqs_createsubdb_rep:
     log:    f"{LOGS_DIR}/mmseqs_createsubdb.log"
     conda:  CONDA_ENV
     shell:  """
-            mmseqs createsubdb {CLUSTER_PREFIX} {DB_PREFIX} {REPDB_PREFIX} &> {log}
+            {MMSEQS} createsubdb {CLUSTER_PREFIX} {DB_PREFIX} {REPDB_PREFIX} &> {log}
             """
 
 # ───────────────────────  FASTA репрезентативов  ────────────────────────── #
@@ -118,7 +152,7 @@ rule mmseqs_result2flat:
     log:    f"{LOGS_DIR}/mmseqs_result2flat.log"
     conda:  CONDA_ENV
     shell:  """
-            mmseqs result2flat {DB_PREFIX} {DB_PREFIX} {REPDB_PREFIX} {output} &> {log}
+            {MMSEQS} result2flat {DB_PREFIX} {DB_PREFIX} {REPDB_PREFIX} {output} &> {log}
             """
 
 # ─────────────────────────  TSV «кластер»  ──────────────────────────────── #
@@ -129,7 +163,7 @@ rule mmseqs_createtsv:
     params: tmp=TMP_DIR
     conda:  CONDA_ENV
     shell:  """
-            mmseqs createtsv {DB_PREFIX} {DB_PREFIX} {CLUSTER_PREFIX} {output} {params.tmp} &> {log}
+            {MMSEQS} createtsv {DB_PREFIX} {DB_PREFIX} {CLUSTER_PREFIX} {output} {params.tmp} &> {log}
             """
 
 rule cluster_stats:

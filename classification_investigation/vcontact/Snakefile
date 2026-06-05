@@ -1,41 +1,57 @@
 ###############################################################################
 # Snakefile для vConTACT 3
 #
-# ── Ожидает:
-#     • vConTACT3 в $PATH (или в активной conda-env, указанной в config)
-#     • файл с репрезентативными МГЭ — rep_mge_nt.fa            (config.paths.rep_mge_fasta)
-#
-# ── Выдаёт:
-#     • каталог vcontact3_out/  (со всеми таблицами и графами)
-#
-# Конфигурация читается из vcontact_config.yaml (пути, env и т.д.).
+# Конфиг: vcontact_config.yaml (пути относительно этого каталога, если не абсолютные).
+# Каталог БД vContact: export VCONTACT_DB=/path/to/vcontactdb или paths.vcontact_db_path
 ###############################################################################
 
-import sys, pathlib, yaml
-sys.path.append("../../finder_pipeline/scripts")
-from logger import Logger
+import os
+import sys
+import pathlib
 
-# ──────────────────── конфиг ────────────────────────────────────────────────
-configfile: "/home/lam34/MGE_finder/classification_investigation/vcontact/vcontact_config.yaml"
+WORKDIR = pathlib.Path(workflow.snakefile).parent.resolve()
+sys.path.insert(0, str(WORKDIR.parent.parent / "IE_finder" / "scripts"))
+from logger import Logger as CustomLogger
 
-REP_MGE_NT    = pathlib.Path(config["paths"]["rep_mge_fasta"])
-OUTPUT_DIR    = pathlib.Path(config["paths"]["output_dir"])
-CONDA_ENV     = config["execution"]["conda_env"]      # conda-env с vConTACT3
+configfile: "vcontact_config.yaml"
+
+
+def resolve_path(p) -> pathlib.Path:
+    p = pathlib.Path(os.path.expanduser(os.path.expandvars(str(p or ""))))
+    if not str(p):
+        return WORKDIR
+    if p.is_absolute():
+        return p.resolve()
+    return (WORKDIR / p).resolve()
+
+
+paths_cfg = config["paths"]
+REP_MGE_NT = resolve_path(paths_cfg["rep_mge_fasta"])
+OUTPUT_DIR = resolve_path(paths_cfg["output_dir"])
+CONDA_ENV = config["execution"]["conda_env"]
+
+_db = (os.environ.get("VCONTACT_DB") or "").strip() or str(
+    paths_cfg.get("vcontact_db_path") or ""
+).strip()
+if not _db:
+    raise RuntimeError(
+        "vContact DB path missing: export VCONTACT_DB or set paths.vcontact_db_path in vcontact_config.yaml"
+    )
+VCONTACT_DB = pathlib.Path(_db).expanduser().resolve()
 
 LOGS_DIR = OUTPUT_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-logger = Logger("vcontact3_pipeline", True, True).get_logger()
+custom_logger = CustomLogger("vcontact3_pipeline", True, True).get_logger()
 
-# ──────────────────── 
 rule all:
     input:
-        directory(OUTPUT_DIR / "vcontact3_out")
+        OUTPUT_DIR / "vcontact3_out" / "final_assignments.csv"
 
 rule run_vcontact3:
     input:
         fasta = REP_MGE_NT
     output:
-        directory(OUTPUT_DIR / "vcontact3_out")
+        final_csv = OUTPUT_DIR / "vcontact3_out" / "final_assignments.csv"
     log:
         LOGS_DIR / "vcontact3.log"
     threads: 16
@@ -43,15 +59,19 @@ rule run_vcontact3:
         CONDA_ENV
     shell:
         """
-        mkdir -p {output} $(dirname {log})
+        mkdir -p $(dirname {output.final_csv}) $(dirname {log})
         echo ">>> INPUT FASTA: {input.fasta}" 1>&2
         echo ">>> PWD: $(pwd)" 1>&2
+        rm -rf $(dirname {output.final_csv})/exports 2>/dev/null || true
+        rm -f $(dirname {output.final_csv})/*.resolver.pkl.gz $(dirname {output.final_csv})/*.profile.pkl.gz 2>/dev/null || true
         vcontact3 run \
             --nucleotide {input.fasta} \
-            --output     {output} \
+            --output     $(dirname {output.final_csv}) \
             --threads    {threads} \
-            --db-path    /home/lam34/vcontactdb \
+            --db-path    '{VCONTACT_DB}' \
             --db-version 228 \
             --db-domain  prokaryotes \
-            --exports   cytoscape graphml cosmograph profiles completeness 
+            --exports   cytoscape graphml cosmograph profiles completeness \
+            --force \
+            --keep-temp
         """

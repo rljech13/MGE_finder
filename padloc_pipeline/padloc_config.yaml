@@ -1,8 +1,8 @@
 paths:
-  input_dir:  /home/lam34/MGE_finder/results
-  output_dir: /home/lam34/MGE_finder/padloc_pipeline/results
-  logger_dir: /home/lam34/MGE_finder/scripts
-  run_padloc_script: /home/lam34/MGE_finder/padloc_pipeline/scripts/padloc_wrapper.py
+  input_dir: ../IE_finder/results_deinococcales
+  output_dir: results_deinococcales
+  logger_dir: ../IE_finder/scripts
+  run_padloc_script: scripts/padloc_wrapper.py
 
 execution:
   conda_env: padloc

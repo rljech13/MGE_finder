@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = REPO_ROOT / "finder_pipeline" / "scripts" / "build_combined_hmm.py"
+SCRIPT = REPO_ROOT / "IE_finder" / "scripts" / "build_combined_hmm.py"
 PFAM_DIR = REPO_ROOT / "pfam"
 
 

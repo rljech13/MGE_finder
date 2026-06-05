@@ -1,10 +1,10 @@
 # Conda environment name with logger and mmseqs
-conda_env: "MGE_finder"
+conda_env: "IE_finder"
 
 proteins:
   # glob pattern to Bakta-predicted protein files (annotation.faa) for each sample
   # Use absolute path or adjust relative to this directory
-  pattern: "../bakta_pipeline/results_bakta/*/annotation.faa"
+  pattern: "../bakta_pipeline/results_bakta_deinococcales/*/annotation.faa"
 
 mmseqs:
   # Directory where clustering results will be stored

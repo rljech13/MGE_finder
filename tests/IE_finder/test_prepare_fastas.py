@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "finder_pipeline" / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "IE_finder" / "scripts"))
 
 from prepare_fastas import process_input_sources
 

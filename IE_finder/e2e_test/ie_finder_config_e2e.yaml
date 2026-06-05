@@ -1,10 +1,10 @@
 paths:
-  config_file: "e2e_test/finder_config_e2e.yaml"
+  config_file: "e2e_test/ie_finder_config_e2e.yaml"
   genomes_dir: "data/e2e_genomes"
   results_dir: "results_e2e"
 
 execution:
-  conda_env: "../envs/MGE_finder.yaml"
+  conda_env: "../envs/IE_finder.yaml"
 
 input_sources:
   - "data/e2e_genomes"

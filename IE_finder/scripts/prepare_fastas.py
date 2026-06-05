@@ -181,7 +181,7 @@ def main(config_path, output_done=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare genome FASTA files")
-    parser.add_argument("--config", required=False, default="finder_config.yaml", help="Path to finder_config.yaml")
+    parser.add_argument("--config", required=False, default="ie_finder_config.yaml", help="Path to ie_finder_config.yaml")
     parser.add_argument("--done", required=False, help="(Optional) Path to .complete output file (used in Snakemake)")
     args = parser.parse_args()
     main(args.config, args.done)

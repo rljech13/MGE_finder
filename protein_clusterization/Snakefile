@@ -2,9 +2,16 @@
 #  SINGLE-SHOT MMSEQS2 CLUSTER PIPELINE  +  ORIGIN TAGGING FOR REPRESENTATIVES
 ###############################################################################
 
-import os, glob, sys
-sys.path.append("../scripts")
+import os
+import glob
+import sys
+from pathlib import Path
+
+WORKDIR = Path(workflow.snakefile).parent.resolve()
+sys.path.insert(0, str(WORKDIR.parent / "IE_finder" / "scripts"))
 from logger import Logger
+
+MMSEQS = os.environ.get("MMSEQS_BIN", "mmseqs")
 
 logger = Logger(name="mmseqs_single",
                 log_to_console=True,
@@ -13,7 +20,13 @@ logger = Logger(name="mmseqs_single",
 # --------------------------------------------------------------------------- #
 configfile: "classification_config.yaml"
 
-PROTEIN_GLOB   = config["proteins"]["pattern"]
+_raw_pattern = os.path.expanduser(
+    os.path.expandvars(config["proteins"]["pattern"] or "")
+)
+if os.path.isabs(_raw_pattern):
+    PROTEIN_GLOB = _raw_pattern
+else:
+    PROTEIN_GLOB = str(WORKDIR / _raw_pattern)
 CONDA_ENV      = config["conda_env"]
 
 mmcfg          = config["mmseqs"]
@@ -70,7 +83,7 @@ rule mmseqs_createdb:
     conda:  CONDA_ENV
     shell:
         """
-        mmseqs createdb {input} {DB_PREFIX} &> {log}
+        {MMSEQS} createdb {input} {DB_PREFIX} &> {log}
         """
 
 # ===============================  CLUSTER  ================================== #
@@ -82,7 +95,7 @@ rule mmseqs_cluster:
     conda:  CONDA_ENV
     shell:
         """
-        mmseqs cluster {DB_PREFIX} {CLUSTER_PREFIX} {params.tmp} \
+        {MMSEQS} cluster {DB_PREFIX} {CLUSTER_PREFIX} {params.tmp} \
             --min-seq-id {params.id} -c {params.cov} &> {log}
         """
 
@@ -94,7 +107,7 @@ rule mmseqs_createsubdb_rep:
     conda:  CONDA_ENV
     shell:
         """
-        mmseqs createsubdb {CLUSTER_PREFIX} {DB_PREFIX} {REPDB_PREFIX} &> {log}
+        {MMSEQS} createsubdb {CLUSTER_PREFIX} {DB_PREFIX} {REPDB_PREFIX} &> {log}
         """
 
 # ====================  FASTA REPRESENTATIVES (raw)  ======================== #
@@ -105,7 +118,7 @@ rule mmseqs_result2flat:
     conda:  CONDA_ENV
     shell:
         """
-        mmseqs result2flat {DB_PREFIX} {DB_PREFIX} {REPDB_PREFIX} {output} &> {log}
+        {MMSEQS} result2flat {DB_PREFIX} {DB_PREFIX} {REPDB_PREFIX} {output} &> {log}
         """
 
 # ===============================  TSV  ====================================== #
@@ -117,7 +130,7 @@ rule mmseqs_createtsv:
     conda:  CONDA_ENV
     shell:
         """
-        mmseqs createtsv {DB_PREFIX} {DB_PREFIX} {CLUSTER_PREFIX} {output} {params.tmp} &> {log}
+        {MMSEQS} createtsv {DB_PREFIX} {DB_PREFIX} {CLUSTER_PREFIX} {output} {params.tmp} &> {log}
         """
 
 # =====================  MAP ID → EXTRA INFO  (PATCH)  ===================== #

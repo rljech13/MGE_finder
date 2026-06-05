@@ -1,17 +1,17 @@
-# Path to GBK files with annotated MGEs
-# Use absolute path or relative path from this directory
+# Path patterns are relative to this directory (clusterMGE/), unless absolute.
 paths:
-  mge_gbk_pattern: "../finder_pipeline/results/*/mge_annotated.gbk"
+  mge_fasta_pattern: "../../IE_finder/results_deinococcales/*/mge_region.fa"
+  mge_gbk_pattern: "../../IE_finder/results_deinococcales/*/mge_annotated.gbk"
+  use_fasta: true
 
 execution:
-  conda_env: "MGE_finder"  # MMseqs2, Biopython, Snakemake
+  conda_env: "IE_finder"
 
 mmseqs:
-  results_dir:      "results_mge"          # all outputs go here
+  results_dir:      "results_mge"
   tmp_dir:          "results_mge/tmp"
   db_prefix:        "results_mge/mge_db"
   cluster_prefix:   "results_mge/mge_cluster"
   repdb_prefix:     "results_mge/mge_repdb"
-  min_seq_id:       0.9                   # ≥ 90% identity
-  coverage:         0.95                  # ≥ 95% coverage
-
+  min_seq_id:       0.9
+  coverage:         0.95

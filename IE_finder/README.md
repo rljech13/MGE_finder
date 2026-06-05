@@ -1,4 +1,4 @@
-# finder_pipeline
+# IE_finder
 
 Snakemake workflow for discovering **integrative elements (IEs)** in prokaryotic genome assemblies. The pipeline identifies tyrosine recombinase (integrase) genes, links each hit to a nearby tRNA on the opposite strand, extracts the candidate insertion region by BLAST, annotates attachment sites (attL/attR), applies strict quality filters, and produces a deduplicated set of representative sequences across the cohort.
 
@@ -56,7 +56,7 @@ Two output layers exist per sample:
 - Snakemake ≥ 7
 - ~2 GB disk per 100 genomes (varies with assembly size and hit count)
 
-All bioinformatics tools (Prodigal, HMMER, Aragorn, BLAST+, MMseqs2) are installed via the bundled conda environment `envs/MGE_finder.yaml`.
+All bioinformatics tools (Prodigal, HMMER, Aragorn, BLAST+, MMseqs2) are installed via the bundled conda environment `envs/IE_finder.yaml`.
 
 ---
 
@@ -65,11 +65,11 @@ All bioinformatics tools (Prodigal, HMMER, Aragorn, BLAST+, MMseqs2) are install
 From the repository root:
 
 ```bash
-conda env create -f envs/MGE_finder.yaml
-conda activate MGE_finder
+conda env create -f envs/IE_finder.yaml
+conda activate IE_finder
 ```
 
-Pfam HMM profiles for integrase detection are bundled under `../pfam/` (relative to `finder_pipeline/`):
+Pfam HMM profiles for integrase detection are bundled under `../pfam/` (relative to `IE_finder/`):
 
 - `PF00589.hmm` — phage integrase
 - `PF22022.hmm` — additional integrase profile
@@ -79,10 +79,10 @@ Pfam HMM profiles for integrase detection are bundled under `../pfam/` (relative
 ## Quick start
 
 ```bash
-cd finder_pipeline
+cd IE_finder
 
 # 1. Create a local config
-cp finder_config.yaml.example finder_config.yaml
+cp ie_finder_config.yaml.example ie_finder_config.yaml
 
 # 2. Edit paths — at minimum set input_sources and genomes_dir
 #    (see Configuration below)
@@ -103,7 +103,7 @@ cp finder_config.yaml.example finder_config.yaml
 `run.sh` invokes Snakemake with `--use-conda`, `--rerun-incomplete`, and `--show-failed-logs`. Override the config file:
 
 ```bash
-CONFIG=finder_config.yaml ./run.sh --cores=4
+CONFIG=ie_finder_config.yaml ./run.sh --cores=4
 ```
 
 ---
@@ -138,16 +138,16 @@ You can symlink or copy `{sample}.fna` files directly into `genomes_dir`. Snakem
 
 ## Configuration
 
-All paths in `finder_config.yaml` are relative to `finder_pipeline/` unless absolute.
+All paths in `ie_finder_config.yaml` are relative to `IE_finder/` unless absolute.
 
 ```yaml
 paths:
-  config_file: "finder_config.yaml"
+  config_file: "ie_finder_config.yaml"
   genomes_dir: "data/genomes"      # canonical input FASTA directory
   results_dir: "results"           # all pipeline outputs
 
 execution:
-  conda_env: "../envs/MGE_finder.yaml"
+  conda_env: "../envs/IE_finder.yaml"
 
 input_sources:
   - "data/genomes"                 # directories searched by prepare_fastas.py
@@ -231,8 +231,8 @@ flowchart TD
 Re-run a single stage:
 
 ```bash
-snakemake filter_confident_ie --configfile finder_config.yaml --cores 4
-snakemake dedup_ie_representatives --configfile finder_config.yaml --cores 4
+snakemake filter_confident_ie --configfile ie_finder_config.yaml --cores 4
+snakemake dedup_ie_representatives --configfile ie_finder_config.yaml --cores 4
 ```
 
 ---
@@ -311,7 +311,7 @@ python scripts/batch_runner.py \
   --work-dir data/genomes \
   --batch-size 100 \
   --use-conda \
-  --snakemake-config finder_config.yaml
+  --snakemake-config ie_finder_config.yaml
 ```
 
 Each line in the manifest is a path to a genome FASTA (`.fna`, `.fa`, or `.gz`). The work directory must match `paths.genomes_dir` in the config.
@@ -337,15 +337,15 @@ Writes `{prefix}_summary.tsv` (per-genome counts), `{prefix}_details.tsv` (per-I
 Unit tests (from repository root):
 
 ```bash
-conda activate MGE_finder
-pytest tests/finder_pipeline/ -q
+conda activate IE_finder
+pytest tests/IE_finder/ -q
 ```
 
 End-to-end stress test on six edge-case genomes (requires local symlinks in `data/e2e_genomes/`):
 
 ```bash
-cd finder_pipeline
-CONFIG=e2e_test/finder_config_e2e.yaml ./run.sh --cores=6
+cd IE_finder
+CONFIG=e2e_test/ie_finder_config_e2e.yaml ./run.sh --cores=6
 ```
 
 See `e2e_test/README.md` for the test panel description.
@@ -384,7 +384,7 @@ Unlock a stuck Snakemake directory:
 After changing Pfam profiles, force rebuild:
 
 ```bash
-snakemake build_combined_hmm --force --configfile finder_config.yaml
+snakemake build_combined_hmm --force --configfile ie_finder_config.yaml
 ```
 
 ---
@@ -392,12 +392,12 @@ snakemake build_combined_hmm --force --configfile finder_config.yaml
 ## Directory layout
 
 ```
-finder_pipeline/
+IE_finder/
 ├── Snakefile
 ├── run.sh
-├── finder_config.yaml              # active config (git-tracked template)
-├── finder_config.yaml.example    # annotated example for new setups
-├── README_finder.md              # this file
+├── ie_finder_config.yaml              # active config (git-tracked template)
+├── ie_finder_config.yaml.example    # annotated example for new setups
+├── README.md              # this file
 ├── e2e_test/                     # stress-test config and docs
 ├── scripts/
 │   ├── prepare_fastas.py

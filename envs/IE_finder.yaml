@@ -1,0 +1,25 @@
+name: IE_finder
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - biopython
+  - hmmer
+  - prodigal
+  - pyrodigal
+  - python=3.10
+  - seqtk
+  - yaml
+  - pyyaml
+  - rich
+  - bcbio-gff
+  - pandas
+  - aragorn
+  - blast
+  - tabulate
+  - entrez-direct
+  - fasttree
+  - snakemake
+  - mmseqs2
+prefix: /home/lam34/miniforge3/envs/IE_finder

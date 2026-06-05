@@ -1,14 +1,14 @@
-# Contributing to MGE Finder
+# Contributing to IE_finder
 
-Thank you for your interest in contributing to MGE Finder!
+Thank you for your interest in contributing to IE_finder!
 
 ## Development Setup
 
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/your-username/MGE_finder.git
-   cd MGE_finder
+   git clone https://github.com/your-username/IE_finder.git
+   cd IE_finder
    ```
 3. Create a branch for your changes:
    ```bash

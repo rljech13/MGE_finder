@@ -24,7 +24,7 @@ def load_dedup_config(config_path: Path | None) -> dict:
     """Load MMseqs deduplication settings from a pipeline configuration file.
 
     Args:
-        config_path: Path to ``finder_config.yaml``, or None to use defaults.
+        config_path: Path to ``ie_finder_config.yaml``, or None to use defaults.
 
     Returns:
         Dictionary with keys ``enabled``, ``min_seq_id``, ``min_coverage``,
@@ -262,7 +262,7 @@ def dedup_representatives(
     Args:
         results_dir: Snakemake results root containing per-sample directories.
         out_dir: Output directory for deduplication artifacts.
-        config_path: Path to ``finder_config.yaml``.
+        config_path: Path to ``ie_finder_config.yaml``.
 
     Returns:
         Number of non-redundant representative integrase identifiers.
@@ -442,7 +442,7 @@ def main() -> None:
     )
     parser.add_argument("--results-dir", required=True, help="Snakemake results directory.")
     parser.add_argument("--out-dir", required=True, help="Deduplication output directory.")
-    parser.add_argument("--config", default="finder_config.yaml", help="Pipeline config.")
+    parser.add_argument("--config", default="ie_finder_config.yaml", help="Pipeline config.")
     args = parser.parse_args()
     n = dedup_representatives(Path(args.results_dir), Path(args.out_dir), Path(args.config))
     logger.info(f"Dedup complete: {n} representative IE(s)")
