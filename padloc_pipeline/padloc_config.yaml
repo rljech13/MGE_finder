@@ -1,7 +1,7 @@
 paths:
-  input_dir: ../IE_finder/results_deinococcales
+  input_dir: ../finder_pipeline/results_deinococcales
   output_dir: results_deinococcales
-  logger_dir: ../IE_finder/scripts
+  logger_dir: ../finder_pipeline/scripts
   run_padloc_script: scripts/padloc_wrapper.py
 
 execution:

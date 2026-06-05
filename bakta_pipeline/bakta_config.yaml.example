@@ -1,8 +1,8 @@
 paths:
-  input_dir: ../IE_finder/results_deinococcales
+  input_dir: ../finder_pipeline/results_deinococcales
   output_dir: results_bakta_deinococcales
   log_dir: results_bakta_deinococcales
-  genomes_dir: ../IE_finder/data/genomes
+  genomes_dir: ../finder_pipeline/data/genomes
   # Optional if you export BAKTA_DB (see README); absolute path is fine
   db: ""
 

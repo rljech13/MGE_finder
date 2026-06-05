@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "IE_finder" / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "finder_pipeline" / "scripts"))
 
 from v3ps_filters import (
     FilterThresholds,

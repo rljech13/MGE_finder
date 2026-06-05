@@ -4,7 +4,7 @@ paths:
   results_dir: "results"
 
 execution:
-  # Either a conda env name or a path to envs/IE_finder.yaml (relative to IE_finder/)
+  # Either a conda env name or a path to envs/IE_finder.yaml (relative to finder_pipeline/)
   conda_env: "../envs/IE_finder.yaml"
 
 # Directories searched recursively for input assemblies
@@ -35,7 +35,7 @@ dedup:
   min_seq_id: 0.9
   min_coverage: 0.8
 
-# Pfam HMM profiles for integrase detection (paths relative to IE_finder/)
+# Pfam HMM profiles for integrase detection (paths relative to finder_pipeline/)
 pfam_profiles:
   - "../pfam/PF00589.hmm"
   - "../pfam/PF22022.hmm"

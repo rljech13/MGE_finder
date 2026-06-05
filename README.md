@@ -2,7 +2,7 @@
 
 IE_finder is a Snakemake-based workflow for discovering **integrative elements (IEs)** in prokaryotic genomes. The repository also contains downstream analysis modules (Bakta annotation, defense-system screening, clustering, classification) built around the core IE discovery pipeline.
 
-**Core pipeline documentation:** [IE_finder/README.md](IE_finder/README.md)
+**Core pipeline documentation:** [finder_pipeline/README.md](finder_pipeline/README.md)
 
 **Project map (directories, notebooks, archived notes):** see [docs/NAVIGATION.md](docs/NAVIGATION.md).
 
@@ -32,7 +32,7 @@ IE_finder is a Snakemake-based workflow for discovering **integrative elements (
 ```
 MGE_finder/                   # repository root (GitHub clone directory)
 ├── docs/
-├── IE_finder/                # core IE discovery pipeline
+├── finder_pipeline/          # IE_finder tool (Snakemake workflow)
 │   ├── Snakefile, ie_finder_config.yaml, run.sh
 │   ├── scripts/
 │   ├── data/                 # input genomes (git-ignored)
@@ -95,7 +95,7 @@ Copy example configuration files and edit them with your paths:
 
 ```bash
 # IE_finder pipeline
-cd IE_finder
+cd finder_pipeline
 cp ie_finder_config.yaml.example ie_finder_config.yaml
 # Edit ie_finder_config.yaml with your paths
 
@@ -111,9 +111,9 @@ See [SETUP.md](SETUP.md) for detailed configuration instructions.
 
 ##  Modules Overview
 
-### 1. IE_IE_finder pipeline
+### 1. IE_finder pipeline
 
-**Location:** `IE_finder/`
+**Location:** `finder_pipeline/`
 
 **Purpose:** Main pipeline for detecting MGEs integrating into tRNA genes. Screens genomes for integrases, identifies nearby tRNAs, extracts MGE regions, and annotates attachment sites.
 
@@ -156,7 +156,7 @@ pfam_profiles:
 **Run:**
 
 ```bash
-cd IE_finder
+cd finder_pipeline
 bash run.sh
 ```
 
@@ -199,9 +199,9 @@ Copy `bakta_config.yaml.example` to `bakta_config.yaml` and edit paths. Director
 
 ```yaml
 paths:
-  input_dir: ../IE_finder/results_deinococcales
+  input_dir: ../finder_pipeline/results_deinococcales
   output_dir: results_bakta_deinococcales
-  genomes_dir: ../IE_finder/data/genomes
+  genomes_dir: ../finder_pipeline/data/genomes
   db: ""
 
 params:
@@ -248,9 +248,9 @@ Copy `padloc_config.yaml.example` to `padloc_config.yaml` and edit. Paths under 
 
 ```yaml
 paths:
-  input_dir: ../IE_finder/results_deinococcales
+  input_dir: ../finder_pipeline/results_deinococcales
   output_dir: results_deinococcales
-  logger_dir: ../IE_finder/scripts
+  logger_dir: ../finder_pipeline/scripts
   run_padloc_script: scripts/padloc_wrapper.py
 
 execution:
@@ -279,14 +279,14 @@ bash run_padloc.sh
 
 **Configuration:** `mge_cluster_config.yaml`
 
-Copy `mge_cluster_config.yaml.example` to `mge_cluster_config.yaml` and edit. Glob patterns are **relative to `classification_investigation/clusterMGE/`** (or use absolute paths). Default inputs point at **`IE_finder/results_deinococcales`**.
+Copy `mge_cluster_config.yaml.example` to `mge_cluster_config.yaml` and edit. Glob patterns are **relative to `classification_investigation/clusterMGE/`** (or use absolute paths). Default inputs point at **`finder_pipeline/results_deinococcales`**.
 
 MMseqs2: Snakemake uses the `mmseqs` executable on `PATH` inside the conda env. To force a binary, set **`MMSEQS_BIN`**.
 
 ```yaml
 paths:
-  mge_fasta_pattern: "../../IE_finder/results_deinococcales/*/mge_region.fa"
-  mge_gbk_pattern: "../../IE_finder/results_deinococcales/*/mge_annotated.gbk"
+  mge_fasta_pattern: "../../finder_pipeline/results_deinococcales/*/mge_region.fa"
+  mge_gbk_pattern: "../../finder_pipeline/results_deinococcales/*/mge_annotated.gbk"
   use_fasta: true
 
 execution:
@@ -424,15 +424,15 @@ killall wget
 
 ### Statistics Collection
 
-**Location:** `IE_finder/scripts/`
+**Location:** `finder_pipeline/scripts/`
 
 - `collect_mge_statistics.py` — агрегирует статистику MGE по всем сэмплам в каталоге результатов. Записывает три файла: `{prefix}_summary.tsv`, `{prefix}_details.tsv`, `{prefix}_overall.tsv`.
 
 **Usage:**
 
 ```bash
-python IE_finder/scripts/collect_mge_statistics.py \
-    --results IE_finder/results \
+python finder_pipeline/scripts/collect_mge_statistics.py \
+    --results finder_pipeline/results \
     --out-prefix results_organized/summary/mge
 ```
 
@@ -449,9 +449,9 @@ python IE_finder/scripts/collect_mge_statistics.py \
 
 ## Output Files
 
-### IE_IE_finder pipeline Outputs
+### IE_finder pipeline Outputs
 
-Per sample in `IE_finder/results/{sample}/`:
+Per sample in `finder_pipeline/results/{sample}/`:
 
 - `orfs.gff`, `orfs.ffn`, `orfs.faa` - ORF predictions
 - `integrase_hits.txt`, `integrase_hits_summary.tsv`, `integrase_orfs.tsv` - HMM results
@@ -483,7 +483,7 @@ Per sample in `IE_finder/results/{sample}/`:
 
 ### Customizing Distance Thresholds
 
-In `IE_finder/Snakefile`, modify the `trna_proximity` rule:
+In `finder_pipeline/Snakefile`, modify the `trna_proximity` rule:
 
 ```python
 rule trna_proximity:
@@ -493,7 +493,7 @@ rule trna_proximity:
 
 ### Customizing BLAST Window Size
 
-In `IE_finder/scripts/annotate_mge_region.py`, modify:
+In `finder_pipeline/scripts/annotate_mge_region.py`, modify:
 
 ```python
 WINDOW_SIZE = 100000  # Change this value
@@ -504,7 +504,7 @@ WINDOW_SIZE = 100000  # Change this value
 If you add/remove Pfam profiles, edit `ie_finder_config.yaml` and rerun:
 
 ```bash
-cd IE_finder
+cd finder_pipeline
 snakemake build_combined_hmm
 ```
 
@@ -557,7 +557,7 @@ During runs, logs accumulate under each pipeline’s `logs/` folder and the repo
 ##  Additional Resources
 
 - **Directory map (RU)**: [docs/NAVIGATION.md](docs/NAVIGATION.md)
-- **IE_IE_finder pipeline Details**: See `IE_finder/README.md`
+- **IE_finder pipeline Details**: See `finder_pipeline/README.md`
 - **vContact Notes**: See `classification_investigation/vcontact/README.md`
 
 ---
@@ -566,7 +566,7 @@ During runs, logs accumulate under each pipeline’s `logs/` folder and the repo
 
 Recommended execution order:
 
-1. **IE_IE_finder pipeline** - Detect and annotate MGEs
+1. **IE_finder pipeline** - Detect and annotate MGEs
 2. **Bakta Pipeline** - Annotate MGE regions with Bakta
 3. **PADLOC Pipeline** - Detect defense systems
 4. **MGE Clustering** - Cluster MGE sequences

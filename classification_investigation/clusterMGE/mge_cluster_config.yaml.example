@@ -1,7 +1,7 @@
 # Path patterns are relative to this directory (clusterMGE/), unless absolute.
 paths:
-  mge_fasta_pattern: "../../IE_finder/results_deinococcales/*/mge_region.fa"
-  mge_gbk_pattern: "../../IE_finder/results_deinococcales/*/mge_annotated.gbk"
+  mge_fasta_pattern: "../../finder_pipeline/results_deinococcales/*/mge_region.fa"
+  mge_gbk_pattern: "../../finder_pipeline/results_deinococcales/*/mge_annotated.gbk"
   use_fasta: true
 
 execution:

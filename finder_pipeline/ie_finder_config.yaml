@@ -4,7 +4,7 @@ paths:
   results_dir: "results"
 
 execution:
-  # Path relative to IE_finder/ (Snakemake --use-conda)
+  # Path relative to finder_pipeline/ (Snakemake --use-conda)
   conda_env: "../envs/IE_finder.yaml"
 
 input_sources:

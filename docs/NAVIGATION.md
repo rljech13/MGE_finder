@@ -12,7 +12,7 @@
 
 | Путь | Назначение |
 |------|------------|
-| [`IE_finder/`](../IE_finder/) | Основной Snakemake-пайплайн поиска MGE; скрипты в `scripts/`. Подробности: [README.md](../IE_finder/README.md). |
+| [`finder_pipeline/`](../finder_pipeline/) | Основной Snakemake-пайплайн поиска MGE; скрипты в `scripts/`. Подробности: [README.md](../finder_pipeline/README.md). |
 | [`bakta_pipeline/`](../bakta_pipeline/) | Аннотация регионов Bakta + слияние с att-сайтами. |
 | [`padloc_pipeline/`](../padloc_pipeline/) | PADLOC (системы защиты). |
 | [`results_organized/`](../results_organized/) | **Точка входа для анализа:** объединённые таблицы, GTDB, кластеризация геномов, визуализации, ноутбуки `notebooks/`. Сводные TSV (MGE, PADLOC/defense, метаданные) лежат в [`results_organized/summary/`](../results_organized/summary/). |
@@ -20,7 +20,7 @@
 | [`classification_investigation/`](../classification_investigation/) | Кластеризация MGE (MMseqs), vContact, визуализации для классификации. |
 | [`classification_investigation_bins/`](../classification_investigation_bins/) | Вариант того же исследования для **бинов** (отдельные скрипты и фигуры). |
 | [`protein_clusterization/`](../protein_clusterization/) | MMseqs по белкам Bakta. |
-| [`data/`](../data/) | Локальный NCBI-слой: **`ncbi/`** (FASTA), **`metadata/`** (TSV по Deinococcales), **`scripts/`**, **`docs/`**, **`logs/`**. Не путать с `IE_finder/data/`. См. [data/README.md](../data/README.md). |
+| [`data/`](../data/) | Локальный NCBI-слой: **`ncbi/`** (FASTA), **`metadata/`** (TSV по Deinococcales), **`scripts/`**, **`docs/`**, **`logs/`**. Не путать с `finder_pipeline/data/`. См. [data/README.md](../data/README.md). |
 | [`analysis/`](../analysis/) | Ранний/локальный анализ: `statistics/`, `plots/`, `selected_samples/`, ноутбуки в `notebooks/` (раньше каталог назывался `notebooks ` с пробелом — переименован). |
 | [`additionals/`](../additionals/) | Вспомогательные утилиты вне Snakemake (сейчас в основном `collect_reps.py`); не ядро пайплайна. |
 | [`genomes/`, `integrases/`, `pfam/`](../) | Небольшие вспомогательные данные и HMM-профили. |
@@ -31,8 +31,8 @@
 
 | Путь | Тип содержимого |
 |------|-----------------|
-| `IE_finder/results/` | Побочные результаты по каждому геному |
-| `IE_finder/data/` | Входные FASTA (в т.ч. `genomes_old/` — вероятная старая копия) |
+| `finder_pipeline/results/` | Побочные результаты по каждому геному |
+| `finder_pipeline/data/` | Входные FASTA (в т.ч. `genomes_old/` — вероятная старая копия) |
 | `bakta_pipeline/results_bakta_*/` | Выход Bakta (Deinococcales / Thermaceae и т.д.) |
 | `padloc_pipeline/results_*/` | CSV/выходы PADLOC |
 | `classification_investigation/clusterMGE/results_mge*` | MMseqs и промежуточные FASTA/БД |
@@ -47,7 +47,7 @@
 |-----|--------|
 | Корень | [README.md](../README.md), [SETUP.md](../SETUP.md), [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | `data/` | Статусы загрузок и таксономия |
-| `IE_finder/` | [README.md](../IE_finder/README.md) |
+| `finder_pipeline/` | [README.md](../finder_pipeline/README.md) |
 | `classification_investigation/` | roadmap, разборы tRNA, графов |
 | `classification_investigation/visualizations/` | индекс рисунков |
 | `results_organized/notebooks/` | handoff между ноутбуками, кластеризация |
@@ -59,7 +59,7 @@
 
 Смесь **скриптов** (GTDB/таксономия, Thermaceae, общая статистика, графики) и **тяжёлых артефактов** (например матрицы кластеров белков MGE, Jaccard graphml, `rep_mge_proteins_all.faa`, выгрузки meta\*). Всё это рабочие входы/выходы анализа — не удалять без осознанного решения.
 
-Скрипты под NCBI Thermaceae (в т.ч. `results_organized/misc/plot_*`, `export_*`, `padloc_pipeline/plot_thermaceae_*.py`, `padloc_pipeline/scripts/*thermus*`, `IE_finder/scripts/link_supplement_thermus_genomes.py`) берут корень датасета из **`THERMACEAE_GENOMES_DIR`** (по умолчанию `/home/lam34/Thermaceae_genomes`). Внутри ожидаются `ncbi_dataset/data/data_summary.tsv`, при необходимости `assembly_data_report.jsonl`, и `ncbi_thermus_supplement/ncbi_dataset/data`.
+Скрипты под NCBI Thermaceae (в т.ч. `results_organized/misc/plot_*`, `export_*`, `padloc_pipeline/plot_thermaceae_*.py`, `padloc_pipeline/scripts/*thermus*`, `finder_pipeline/scripts/link_supplement_thermus_genomes.py`) берут корень датасета из **`THERMACEAE_GENOMES_DIR`** (по умолчанию `/home/lam34/Thermaceae_genomes`). Внутри ожидаются `ncbi_dataset/data/data_summary.tsv`, при необходимости `assembly_data_report.jsonl`, и `ncbi_thermus_supplement/ncbi_dataset/data`.
 
 ### `results_organized/scripts/`
 

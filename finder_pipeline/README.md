@@ -1,6 +1,6 @@
 # IE_finder
 
-Snakemake workflow for discovering **integrative elements (IEs)** in prokaryotic genome assemblies. The pipeline identifies tyrosine recombinase (integrase) genes, links each hit to a nearby tRNA on the opposite strand, extracts the candidate insertion region by BLAST, annotates attachment sites (attL/attR), applies strict quality filters, and produces a deduplicated set of representative sequences across the cohort.
+Snakemake workflow for discovering **integrative elements (IEs)** in prokaryotic genome assemblies. This directory (`finder_pipeline/`) contains the IE_finder tool implementation.
 
 **Primary deliverable:** `results/dedup/ie_representatives.fa` and `results/dedup/rep_index.tsv`.
 
@@ -69,7 +69,7 @@ conda env create -f envs/IE_finder.yaml
 conda activate IE_finder
 ```
 
-Pfam HMM profiles for integrase detection are bundled under `../pfam/` (relative to `IE_finder/`):
+Pfam HMM profiles for integrase detection are bundled under `../pfam/` (relative to `finder_pipeline/`):
 
 - `PF00589.hmm` — phage integrase
 - `PF22022.hmm` — additional integrase profile
@@ -79,7 +79,7 @@ Pfam HMM profiles for integrase detection are bundled under `../pfam/` (relative
 ## Quick start
 
 ```bash
-cd IE_finder
+cd finder_pipeline
 
 # 1. Create a local config
 cp ie_finder_config.yaml.example ie_finder_config.yaml
@@ -138,7 +138,7 @@ You can symlink or copy `{sample}.fna` files directly into `genomes_dir`. Snakem
 
 ## Configuration
 
-All paths in `ie_finder_config.yaml` are relative to `IE_finder/` unless absolute.
+All paths in `ie_finder_config.yaml` are relative to `finder_pipeline/` unless absolute.
 
 ```yaml
 paths:
@@ -338,13 +338,13 @@ Unit tests (from repository root):
 
 ```bash
 conda activate IE_finder
-pytest tests/IE_finder/ -q
+pytest tests/finder_pipeline/ -q
 ```
 
 End-to-end stress test on six edge-case genomes (requires local symlinks in `data/e2e_genomes/`):
 
 ```bash
-cd IE_finder
+cd finder_pipeline
 CONFIG=e2e_test/ie_finder_config_e2e.yaml ./run.sh --cores=6
 ```
 
@@ -392,7 +392,7 @@ snakemake build_combined_hmm --force --configfile ie_finder_config.yaml
 ## Directory layout
 
 ```
-IE_finder/
+finder_pipeline/
 ├── Snakefile
 ├── run.sh
 ├── ie_finder_config.yaml              # active config (git-tracked template)

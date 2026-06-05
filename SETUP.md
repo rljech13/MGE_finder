@@ -65,7 +65,7 @@ wget https://www.ebi.ac.uk/interpro/wwwapi/entry/pfam/PF22022/hmm -O pfam/PF2202
 
 ## Step 5: Configure Pipelines
 
-### IE_IE_finder pipeline
+### IE_finder pipeline
 
 ```bash
 cd IE_finder
