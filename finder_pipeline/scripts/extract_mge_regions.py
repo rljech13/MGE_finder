@@ -1,3 +1,7 @@
+"""Extract integrative element coordinates from BLAST and tRNA tables."""
+
+"""Extract integrative element coordinates from BLAST and tRNA tables."""
+
 import os
 import argparse
 import pandas as pd
@@ -5,8 +9,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from logger import Logger
 
-# Initialize logger at DEBUG level
-logger = Logger(name="extract_mge_manual", level=Logger.Level.DEBUG).get_logger()
+logger = Logger(name="extract_mge_regions", level=Logger.Level.DEBUG).get_logger()
 
 
 def parse_blast(blast_file):

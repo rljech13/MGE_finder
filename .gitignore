@@ -18,16 +18,25 @@ __pycache__/
 
 # Results and output directories
 finder_pipeline/results/
+finder_pipeline/results_deinococcales/
+finder_pipeline/results_thermaceae/
+finder_pipeline/results_e2e/
+finder_pipeline/results_bins/
+finder_pipeline/**/dedup/mmseqs/
 finder_pipeline/data/
 finder_pipeline/logs/
+finder_pipeline/.snakemake/
 finder_pipeline/*.tsv
+finder_pipeline/e2e_test/prepare_n_test/
 
 bakta_pipeline/logs/
 bakta_pipeline/results_bakta/
+bakta_pipeline/results_bakta_*/
 bakta_pipeline/tests/
 
 padloc_pipeline/logs/
 padloc_pipeline/results/
+padloc_pipeline/results_*/
 
 classification_investigation/clusterMGE/results_mge/
 classification_investigation/clusterMGE/logs/
@@ -41,6 +50,7 @@ protein_clusterization/logs/
 # Analysis and statistics
 analysis/
 *.tsv
+!results_organized/summary/*.tsv
 !**/config.yaml
 !**/*_config.yaml
 

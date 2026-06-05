@@ -1,3 +1,5 @@
+"""Annotate extracted integrative elements with attachment sites and integrase features."""
+
 import argparse
 import pandas as pd
 from Bio import SeqIO

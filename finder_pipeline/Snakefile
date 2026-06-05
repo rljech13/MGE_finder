@@ -10,6 +10,7 @@ GENOMES_DIR = config["paths"]["genomes_dir"]
 RESULTS_DIR = config["paths"]["results_dir"]
 PFAM_LIST = config["pfam_profiles"]
 PFAM_ARGS = " ".join(PFAM_LIST)
+PFAM_CLI_ARGS = " ".join(f"--pfam '{pfam}'" for pfam in PFAM_LIST)
 ENV = config["execution"]["conda_env"]
 
 COMBINED_HMM = os.path.join(RESULTS_DIR, "combined", "pfam_combined.hmm")
@@ -36,7 +37,15 @@ rule all:
         expand("{results}/{sample}/mge_blast.tsv", results=RESULTS_DIR, sample=SAMPLES),
         expand("{results}/{sample}/mge_region.fa", results=RESULTS_DIR, sample=SAMPLES),
         expand("{results}/{sample}/mge_annotated.gbk", results=RESULTS_DIR, sample=SAMPLES),
-        expand("{results}/{sample}/attachment_sites.tsv", results=RESULTS_DIR, sample=SAMPLES)
+        expand("{results}/{sample}/attachment_sites.tsv", results=RESULTS_DIR, sample=SAMPLES),
+        expand("{results}/{sample}/ie_confident.fa", results=RESULTS_DIR, sample=SAMPLES),
+        expand("{results}/{sample}/ie_confident.gbk", results=RESULTS_DIR, sample=SAMPLES),
+        expand("{results}/{sample}/ie_filter_audit.tsv", results=RESULTS_DIR, sample=SAMPLES),
+        os.path.join(RESULTS_DIR, "dedup", "ie_representatives.fa"),
+        os.path.join(RESULTS_DIR, "dedup", "ie_representatives.gbk"),
+        os.path.join(RESULTS_DIR, "dedup", "ie_dedup_mapping.tsv"),
+        os.path.join(RESULTS_DIR, "dedup", "rep_index.tsv"),
+        os.path.join(RESULTS_DIR, "dedup", "ie_cluster_metadata.tsv"),
 
 
 rule prepare_fasta:
@@ -46,9 +55,11 @@ rule prepare_fasta:
         "logs/prepare_fasta.log"
     conda:
         f"{ENV}"
+    params:
+        config_path=config["paths"].get("config_file", "finder_config.yaml")
     shell:
         """
-        python scripts/prepare_fastas.py --config config.yaml > {log} 2>&1
+        python scripts/prepare_fastas.py --config {params.config_path} > {log} 2>&1
         touch {output}
         """
 
@@ -75,14 +86,15 @@ rule build_combined_hmm:
         "logs/build_combined_hmm.log"
     conda:
         f"{ENV}"
-    run:
-        hmm_output = output[0]
-        os.makedirs(os.path.dirname(hmm_output), exist_ok=True)
-        with open(hmm_output, "w") as out:
-            for pfam in config["pfam_profiles"]:
-                with open(pfam) as f:
-                    out.write(f.read())
-        shell(f"hmmpress {hmm_output} > {log}")
+    params:
+        pfam_args=PFAM_CLI_ARGS
+    shell:
+        """
+        python scripts/build_combined_hmm.py \
+            --output {output} \
+            --log {log} \
+            {params.pfam_args}
+        """
 
 rule hmm_search:
     input:
@@ -97,9 +109,20 @@ rule hmm_search:
         os.path.join(RESULTS_DIR, "{sample}", "hmm_search.log")
     conda:
         f"{ENV}"
+    params:
+        skip_log="logs/hmmscan_skipped.tsv"
     shell:
         """
-        python scripts/hmm_search.py --faa {input.faa} --gff {input.gff} --out {output.hits} --summary {output.stats} --orfs {output.orfs} --combined {input.hmm} > {log} 2>&1
+        python scripts/hmm_search.py \
+            --faa {input.faa} \
+            --gff {input.gff} \
+            --out {output.hits} \
+            --summary {output.stats} \
+            --orfs {output.orfs} \
+            --combined {input.hmm} \
+            --sample {wildcards.sample} \
+            --skip-log {params.skip_log} \
+            > {log} 2>&1
         """
 
 rule predict_trna:
@@ -152,7 +175,8 @@ rule blast_mge:
         integrases=os.path.join(RESULTS_DIR, "{sample}", "integrase_hits_summary.tsv"),
         query=os.path.join(RESULTS_DIR, "{sample}", "mge_query.fa")
     output:
-        blast_tsv=os.path.join(RESULTS_DIR, "{sample}", "mge_blast.tsv")
+        blast_tsv=os.path.join(RESULTS_DIR, "{sample}", "mge_blast.tsv"),
+        blast_raw=os.path.join(RESULTS_DIR, "{sample}", "mge_blast_raw.tsv"),
     log:
         os.path.join(RESULTS_DIR, "{sample}", "blast_mge.log")
     conda:
@@ -200,4 +224,67 @@ rule annotate_mge:
             --blast {input.blast} \
             --out_gbk {output.gbk} \
             --out_att {output.att} > {log} 2>&1
+        """
+
+rule filter_confident_ie:
+    input:
+        trna=os.path.join(RESULTS_DIR, "{sample}", "integrase_trna.tsv"),
+        integrase_hits=os.path.join(RESULTS_DIR, "{sample}", "integrase_hits_summary.tsv"),
+        blast_raw=os.path.join(RESULTS_DIR, "{sample}", "mge_blast_raw.tsv"),
+        mge_fa=os.path.join(RESULTS_DIR, "{sample}", "mge_region.fa"),
+        mge_gbk=os.path.join(RESULTS_DIR, "{sample}", "mge_annotated.gbk"),
+        orfs_gff=os.path.join(RESULTS_DIR, "{sample}", "orfs.gff"),
+        config=config["paths"].get("config_file", "finder_config.yaml"),
+    output:
+        fa=os.path.join(RESULTS_DIR, "{sample}", "ie_confident.fa"),
+        gbk=os.path.join(RESULTS_DIR, "{sample}", "ie_confident.gbk"),
+        audit=os.path.join(RESULTS_DIR, "{sample}", "ie_filter_audit.tsv"),
+    log:
+        os.path.join(RESULTS_DIR, "{sample}", "filter_confident_ie.log")
+    conda:
+        f"{ENV}"
+    shell:
+        """
+        python scripts/filter_confident_ie.py \
+            --sample {wildcards.sample} \
+            --trna {input.trna} \
+            --integrase-hits {input.integrase_hits} \
+            --blast-raw {input.blast_raw} \
+            --mge-fa {input.mge_fa} \
+            --mge-gbk {input.mge_gbk} \
+            --orfs-gff {input.orfs_gff} \
+            --config {input.config} \
+            --out-fa {output.fa} \
+            --out-gbk {output.gbk} \
+            --out-audit {output.audit} \
+            > {log} 2>&1
+        """
+
+rule dedup_ie_representatives:
+    input:
+        confident_fa=expand(
+            os.path.join(RESULTS_DIR, "{sample}", "ie_confident.fa"),
+            sample=SAMPLES,
+        ),
+        config=config["paths"].get("config_file", "finder_config.yaml"),
+    output:
+        rep_fa=os.path.join(RESULTS_DIR, "dedup", "ie_representatives.fa"),
+        rep_gbk=os.path.join(RESULTS_DIR, "dedup", "ie_representatives.gbk"),
+        mapping=os.path.join(RESULTS_DIR, "dedup", "ie_dedup_mapping.tsv"),
+        rep_index=os.path.join(RESULTS_DIR, "dedup", "rep_index.tsv"),
+        metadata=os.path.join(RESULTS_DIR, "dedup", "ie_cluster_metadata.tsv"),
+    log:
+        os.path.join(RESULTS_DIR, "dedup", "dedup_ie_representatives.log")
+    params:
+        results_dir=RESULTS_DIR,
+        out_dir=os.path.join(RESULTS_DIR, "dedup"),
+    conda:
+        f"{ENV}"
+    shell:
+        """
+        python scripts/dedup_ie_representatives.py \
+            --results-dir {params.results_dir} \
+            --out-dir {params.out_dir} \
+            --config {input.config} \
+            > {log} 2>&1
         """

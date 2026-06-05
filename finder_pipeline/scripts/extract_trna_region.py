@@ -1,3 +1,7 @@
+"""Extract tRNA sequences paired with integrases for downstream BLAST."""
+
+"""Extract tRNA sequences paired with integrases for downstream BLAST."""
+
 import os
 import argparse
 import pandas as pd
@@ -5,7 +9,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from logger import Logger
 
-logger = Logger(name="extract_trna_region_debug", level=Logger.Level.INFO).get_logger()
+logger = Logger(name="extract_trna_region", level=Logger.Level.INFO).get_logger()
 
 
 def normalize_id(seq_id):

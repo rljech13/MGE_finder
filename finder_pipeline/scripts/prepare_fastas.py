@@ -1,3 +1,5 @@
+"""Prepare canonical genome FASTA files from configured input source directories."""
+
 import os
 import glob
 import shutil
@@ -5,6 +7,7 @@ import argparse
 import yaml
 from Bio import SeqIO
 from logger import Logger
+from sequence_qc import fasta_contains_ambiguous_n
 
 log = Logger(name="prepare_fasta", draw_progress=True).get_logger()
 
@@ -31,7 +34,14 @@ def find_files(base_dir, pattern, recursive=True):
         return glob.glob(os.path.join(base_dir, pattern))
 
 
-def process_input_sources(sources, out_dir, ncbi_pattern="*_genomic.fna", hybracter_pattern="barcode*.fastq_final.fasta"):
+def process_input_sources(
+    sources,
+    out_dir,
+    ncbi_pattern="*_genomic.fna",
+    hybracter_pattern="barcode*.fastq_final.fasta",
+    bins_pattern="*.fa",
+    reject_ambiguous_n=True,
+):
     """Process input source directories and prepare genome FASTA files.
 
     Creates the output directory if it does not exist, then for each source directory,
@@ -43,9 +53,11 @@ def process_input_sources(sources, out_dir, ncbi_pattern="*_genomic.fna", hybrac
         out_dir (str): Directory where processed FASTA files will be stored.
         ncbi_pattern (str): Glob pattern for NCBI FASTA files.
         hybracter_pattern (str): Glob pattern for Hybracter FASTQ files.
+        bins_pattern (str): Glob pattern for metagenomic bin FASTA files.
+        reject_ambiguous_n (bool): When True, skip assemblies containing N bases.
 
     Returns:
-        list of str: List of sample identifiers that have been processed.
+        list of str: Sample identifiers successfully written to ``out_dir``.
     """
     os.makedirs(out_dir, exist_ok=True)
     processed = []
@@ -55,6 +67,7 @@ def process_input_sources(sources, out_dir, ncbi_pattern="*_genomic.fna", hybrac
     for src in sources:
         total_files += len(find_files(src, ncbi_pattern))
         total_files += len(find_files(src, hybracter_pattern))
+        total_files += len(find_files(src, bins_pattern))
 
     if total_files > 0:
         task = Logger().progress_task("Copying genomes", total=total_files)
@@ -67,10 +80,13 @@ def process_input_sources(sources, out_dir, ncbi_pattern="*_genomic.fna", hybrac
             sample = os.path.basename(os.path.dirname(fna))
             dst = os.path.join(out_dir, f"{sample}.fna")
             try:
-                shutil.copy(fna, dst)
-                if sample not in processed:
-                    processed.append(sample)
-                log.info(f"[NCBI] {sample} → {dst}")
+                if reject_ambiguous_n and fasta_contains_ambiguous_n(fna):
+                    log.warning(f"[NCBI] skip {sample}: FASTA contains ambiguous N")
+                else:
+                    shutil.copy(fna, dst)
+                    if sample not in processed:
+                        processed.append(sample)
+                    log.info(f"[NCBI] {sample} → {dst}")
             except Exception as e:
                 log.error(f"Error in copying {fna}: {e}")
             Logger().advance_progress(task)
@@ -82,13 +98,34 @@ def process_input_sources(sources, out_dir, ncbi_pattern="*_genomic.fna", hybrac
             sample = os.path.basename(fasta).split(".")[0]
             dst = os.path.join(out_dir, f"{sample}.fna")
             try:
-                with open(fasta) as fin, open(dst, "w") as fout:
-                    count = SeqIO.write(SeqIO.parse(fin, "fasta"), fout, "fasta")
-                if sample not in processed:
-                    processed.append(sample)
-                log.info(f"[HYBRACTER] {sample} ({count} seqs) → {dst}")
+                if reject_ambiguous_n and fasta_contains_ambiguous_n(fasta):
+                    log.warning(f"[HYBRACTER] skip {sample}: FASTA contains ambiguous N")
+                else:
+                    with open(fasta) as fin, open(dst, "w") as fout:
+                        count = SeqIO.write(SeqIO.parse(fin, "fasta"), fout, "fasta")
+                    if sample not in processed:
+                        processed.append(sample)
+                    log.info(f"[HYBRACTER] {sample} ({count} seqs) → {dst}")
             except Exception as e:
                 log.error(f"Error in conversion {fasta}: {e}")
+            Logger().advance_progress(task)
+
+        # Process bin files (.fa)
+        bin_files = find_files(src, bins_pattern)
+        for bin_file in bin_files:
+            # Extract sample name from file name (e.g., "943_semibin_1.fa" -> "943_semibin_1")
+            sample = os.path.basename(bin_file).replace(".fa", "")
+            dst = os.path.join(out_dir, f"{sample}.fna")
+            try:
+                if reject_ambiguous_n and fasta_contains_ambiguous_n(bin_file):
+                    log.warning(f"[BIN] skip {sample}: FASTA contains ambiguous N")
+                else:
+                    shutil.copy(bin_file, dst)
+                    if sample not in processed:
+                        processed.append(sample)
+                    log.info(f"[BIN] {sample} → {dst}")
+            except Exception as e:
+                log.error(f"Error in copying {bin_file}: {e}")
             Logger().advance_progress(task)
 
     Logger().finish_progress(task)
@@ -115,13 +152,26 @@ def main(config_path, output_done=None):
         config = yaml.safe_load(f)
 
     sources = config["input_sources"]
-    out_dir = config["genomes_dir"]
+    # Support both flat and nested config structures
+    if "paths" in config and "genomes_dir" in config["paths"]:
+        out_dir = config["paths"]["genomes_dir"]
+    else:
+        out_dir = config.get("genomes_dir", "data/genomes")
 
     # Get customizable patterns with defaults if not provided
     ncbi_pattern = config.get("ncbi_pattern", "*_genomic.fna")
     hybracter_pattern = config.get("hybracter_pattern", "barcode*.fastq_final.fasta")
+    bins_pattern = config.get("bins_pattern", "*.fa")
 
-    processed = process_input_sources(sources, out_dir, ncbi_pattern, hybracter_pattern)
+    reject_ambiguous_n = bool(config.get("reject_ambiguous_n", True))
+    processed = process_input_sources(
+        sources,
+        out_dir,
+        ncbi_pattern,
+        hybracter_pattern,
+        bins_pattern,
+        reject_ambiguous_n=reject_ambiguous_n,
+    )
 
     if output_done:
         with open(output_done, "w") as f:
@@ -131,9 +181,7 @@ def main(config_path, output_done=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare genome FASTA files")
-    parser.add_argument("--config", required=False, default="config.yaml", help="Path to config.yaml")
+    parser.add_argument("--config", required=False, default="finder_config.yaml", help="Path to finder_config.yaml")
     parser.add_argument("--done", required=False, help="(Optional) Path to .complete output file (used in Snakemake)")
     args = parser.parse_args()
     main(args.config, args.done)
-else:
-    main("config.yaml", snakemake.output[0])

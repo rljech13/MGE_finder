@@ -1,3 +1,5 @@
+"""Identify tRNA genes located near integrase hits on the opposite strand."""
+
 import argparse
 import csv
 import re

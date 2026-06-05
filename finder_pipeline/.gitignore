@@ -1,0 +1,13 @@
+# Runtime outputs (see also repo-root .gitignore)
+results/
+results_*/
+data/
+logs/
+.snakemake/
+
+# Ad-hoc statistics exports
+*.tsv
+
+# Python
+__pycache__/
+*.py[cod]

@@ -1,26 +1,41 @@
 paths:
+  config_file: "finder_config.yaml"
   genomes_dir: "data/genomes"
   results_dir: "results"
 
 execution:
-  conda_env: "MGE_finder"
+  # Either a conda env name or a path to envs/MGE_finder.yaml (relative to finder_pipeline/)
+  conda_env: "../envs/MGE_finder.yaml"
 
-# Directories where input files are located
-# Change these paths to point to your genome directories
+# Directories searched recursively for input assemblies
 input_sources:
-  - "/path/to/your/genomes/dir1"
-  - "/path/to/your/genomes/dir2"
+  - "/path/to/ncbi_dataset/data"
+  - "/path/to/hybracter/assemblies"
 
-# Customizable file patterns for input files
-# If you don't want to specify the naming pattern - it would be specified by default
-# And you can find mappings in the log file of prepare_fasta step then
-ncbi_pattern: "*_genomic.fna"              
+# Input file naming patterns (see prepare_fastas.py logs for discovered mappings)
+ncbi_pattern: "*_genomic.fna"
 hybracter_pattern: "barcode*.fastq_final.fasta"
+bins_pattern: "*.fa"
 
-# Pfam profiles for integrase search
-# NB: you can add and use your own profiles for integrases
-# Place your Pfam HMM files in the pfam/ directory
+# Quality filters applied at genome ingestion (prepare_fastas.py)
+reject_ambiguous_n: true
+
+# Quality filters applied downstream on extracted IE (mge_region.fa)
+reject_ambiguous_n_ie: true
+
+# Confident IE set (filter_confident_ie.py) — mirrors Stage 7_h + Stage 8 FINAL
+filters:
+  v3ps_shift: 3
+  attl_min_bp: 15
+  integrase_min_aa: 300
+  ie_min_nt: 2000
+
+dedup:
+  enabled: true
+  min_seq_id: 0.9
+  min_coverage: 0.8
+
+# Pfam HMM profiles for integrase detection (paths relative to finder_pipeline/)
 pfam_profiles:
-  - "pfam/PF00589.hmm"
-  - "pfam/PF22022.hmm"
-
+  - "../pfam/PF00589.hmm"
+  - "../pfam/PF22022.hmm"

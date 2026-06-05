@@ -1,0 +1,32 @@
+paths:
+  config_file: "e2e_test/finder_config_e2e.yaml"
+  genomes_dir: "data/e2e_genomes"
+  results_dir: "results_e2e"
+
+execution:
+  conda_env: "../envs/MGE_finder.yaml"
+
+input_sources:
+  - "data/e2e_genomes"
+
+ncbi_pattern: "*.fna"
+hybracter_pattern: "none.fasta"
+bins_pattern: "none.fa"
+
+reject_ambiguous_n: true
+reject_ambiguous_n_ie: true
+
+filters:
+  v3ps_shift: 3
+  attl_min_bp: 15
+  integrase_min_aa: 300
+  ie_min_nt: 2000
+
+dedup:
+  enabled: true
+  min_seq_id: 0.9
+  min_coverage: 0.8
+
+pfam_profiles:
+  - "../pfam/PF00589.hmm"
+  - "../pfam/PF22022.hmm"

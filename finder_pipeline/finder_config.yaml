@@ -1,23 +1,38 @@
 paths:
+  config_file: "finder_config.yaml"
   genomes_dir: "data/genomes"
   results_dir: "results"
 
 execution:
-  conda_env: "MGE_finder"
+  # Path relative to finder_pipeline/ (Snakemake --use-conda)
+  conda_env: "../envs/MGE_finder.yaml"
 
-# Directories where input files are located ! Change it for your own paths; Below you can see the example
 input_sources:
-  - "/home/lam34/thermaceae_genomes/ncbi_dataset/data/"
-  - "/home/lam34/Thermus_genomes/assemblies_hybracter_ver2/FINAL_OUTPUT/complete/"
+  - "data/genomes"
 
-# Customizable file patterns for input files ! 
-# If you don't want to specify the naming pattern - it would be specified by default 
-# And you can find mapings in the log file of prepare_fasta step then
-# Right now under construction!
-ncbi_pattern: "*_genomic.fna"              
+ncbi_pattern: "*_genomic.fna"
 hybracter_pattern: "barcode*.fastq_final.fasta"
+bins_pattern: "*.fa"
 
-# Pfam profiles for integrase search; NB: you can add and use your own profiles for integrases
+# Skip genome assemblies containing ambiguous N before ORF prediction.
+reject_ambiguous_n: true
+# Flag for downstream IE QC: drop IE with N gaps.
+reject_ambiguous_n_ie: true
+
+# Confident IE set filters (filter_confident_ie.py)
+filters:
+  v3ps_shift: 3
+  attl_min_bp: 15
+  integrase_min_aa: 300
+  ie_min_nt: 2000
+
+# MMseqs2 deduplication of confident IE set (Stage 9)
+dedup:
+  enabled: true
+  min_seq_id: 0.9
+  min_coverage: 0.8
+  # mmseqs_bin: null  # auto-detect from PATH
+
 pfam_profiles:
-  - "/home/lam34/MGE_finder/pfam/PF00589.hmm"
-  - "/home/lam34/MGE_finder/pfam/PF22022.hmm"
+  - "../pfam/PF00589.hmm"
+  - "../pfam/PF22022.hmm"
