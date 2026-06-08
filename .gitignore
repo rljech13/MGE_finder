@@ -51,6 +51,7 @@ protein_clusterization/logs/
 analysis/
 *.tsv
 !results_organized/summary/*.tsv
+!data/metadata/*.tsv
 !**/config.yaml
 !**/*_config.yaml
 
