@@ -1,17 +1,50 @@
 # IE_finder
 
-IE_finder is a Snakemake-based workflow for discovering **integrative elements (IEs)** in prokaryotic genomes. The repository also contains downstream analysis modules (Bakta annotation, defense-system screening, clustering, classification) built around the core IE discovery pipeline.
+IE_finder finds integrative elements in prokaryotic genomes and then follows one element through the analyses in the paper. Discovery is a Snakemake workflow. Everything after the cohort is a numbered chapter under `final_final/`.
 
-**Core pipeline documentation:** [finder_pipeline/README.md](finder_pipeline/README.md)
+A confident element is a phage-type tyrosine integrase next to an opposite-strand tRNA, with a direct repeat of that tRNA 3′ end, an integrase longer than 300 aa, a non-coding attL, and a site that is either an exact repeat of at least 14 bp or a BLAST hit of at least 17 bp. Gapped alignments are dropped, then MMseqs2 keeps one representative at identity 0.9 and coverage 0.8. The frozen cohort after that step is 6,960 elements. The filter code is `finder_pipeline/scripts/v3ps_filters.py`. How to run it is in [finder_pipeline/README.md](finder_pipeline/README.md).
 
-**Project map (directories, notebooks, archived notes):** see [docs/NAVIGATION.md](docs/NAVIGATION.md).
+Tables, figures, genome trees, and HMM databases stay on disk. They are not part of this repository.
+
+## Directories
+
+| directory | what it does |
+|---|---|
+| `finder_pipeline/` | Discovery. Prodigal, HMMER (PF00589, PF22022), Aragorn, BLAST for attL, the cascade above, then MMseqs2. Config: `ie_finder_config.yaml`. |
+| `final_final/` | The paper after the cohort. Chapters `01`–`05` below. Shared code is in `final_final/scripts/`. Written tables and figures stay in `artifacts/` and `figures/` and are not committed. |
+| `bakta_pipeline/` | Bakta annotation of the extracted elements. |
+| `padloc_pipeline/` | PADLOC defense-system search on those elements. |
+| `classification_investigation/` | Earlier nucleotide clustering (`clusterMGE/`, MMseqs) and vContact classification. Separate from the unknown-element Leiden clustering in chapter 3. |
+| `protein_clusterization/` | Clustering of proteins from the Bakta annotations. |
+| `data/` | NCBI assembly downloads and taxonomy tables used as finder input. |
+| `pfam/` | HMM profiles the finder scans, including PF00589 and PF22022. |
+| `envs/` | Conda environment `IE_finder`. |
+| `tests/` | Unit tests for the discovery filters. `make test-finder-pipeline`. |
+| `additionals/` | Small helpers, including collection of representative sequences. |
+| `docs/` | Project notes. This table is the map of the repository. |
+| `refseq_prokaryote/` | Helpers for RefSeq prokaryote metadata. |
+
+`results_organized/` and the other `results_*` trees are local outputs. The atlas and the clustering chapter read loci, eggNOG tables, and the genome feature matrix from there. They are not in git.
+
+### Paper chapters (`final_final/`)
+
+The numbers are the order of the paper. Each chapter's own README says which script reads which file.
+
+| chapter | directory | what it answers |
+|---|---|---|
+| 1 | `final_final/01_discovery/` | How a genome becomes the confident cohort. The workflow itself is `finder_pipeline/`. |
+| 2 | `final_final/02_atlas/` | How an element is labelled phage, conjugative, phage_like, or unknown. The rule package is `ie_classifier/`. |
+| 3 | `final_final/03_clustering/` | How unknown elements group by protein content. Jaccard, 15-nearest neighbours, Leiden. |
+| 4 | `final_final/04_cargo/` | Which functions sit on unknown elements: RM, TA, the other literature classes, and a minimal module. |
+| 5 | `final_final/05_abundance/` | Whether a class is more common inside the element than in the rest of the same genome. |
+
+Chapter 2 reads annotations from `results_organized/`. Chapter 3 reads the chapter 2 labels and `results_organized/genome_clustering/project/genome_matrix/genome_feature_matrix.npz`. Chapter 4 reads the cohort, then its own RM/TA tables. Chapter 5 reads `final_final/artifacts/unknown_ime_classes/after_hypothesis/unknown_minimal_ie.tsv`.
 
 ---
 
 ## Table of Contents
 
-- [Project navigation (`docs/NAVIGATION.md`)](docs/NAVIGATION.md)
-- [Project Structure](#project-structure)
+- [Directories](#directories)
 - [Installation](#installation)
 - [Modules Overview](#modules-overview)
   - [1. IE_finder Pipeline](#1-ie_finder-pipeline)
@@ -24,29 +57,6 @@ IE_finder is a Snakemake-based workflow for discovering **integrative elements (
 - [Additional Scripts](#additional-scripts)
 - [Output Files](#output-files)
 - [Configuration](#configuration)
-
----
-
-##  Project Structure
-
-```
-MGE_finder/                   # repository root (GitHub clone directory)
-├── docs/
-├── finder_pipeline/          # IE_finder tool (Snakemake workflow)
-│   ├── Snakefile, ie_finder_config.yaml, run.sh
-│   ├── scripts/
-│   ├── data/                 # input genomes (git-ignored)
-│   └── results/              # pipeline outputs (git-ignored)
-├── bakta_pipeline/
-├── padloc_pipeline/
-├── results_organized/
-├── classification_investigation/
-├── protein_clusterization/
-├── data/
-├── pfam/
-├── envs/IE_finder.yaml
-└── README.md, SETUP.md
-```
 
 ---
 
@@ -483,21 +493,7 @@ Per sample in `finder_pipeline/results/{sample}/`:
 
 ### Customizing Distance Thresholds
 
-In `finder_pipeline/Snakefile`, modify the `trna_proximity` rule:
-
-```python
-rule trna_proximity:
-    params:
-        max_distance=500  # Change this value
-```
-
-### Customizing BLAST Window Size
-
-In `finder_pipeline/scripts/annotate_mge_region.py`, modify:
-
-```python
-WINDOW_SIZE = 100000  # Change this value
-```
+tRNA–integrase distance and the attL window are read from `finder_pipeline/ie_finder_config.yaml` (`filters.trna_max_distance_bp`, default 500; `filters.attl_window_bp`, default 300000). The Snakefile passes those values into the rules. Do not edit a hardcoded window in `annotate_mge_region.py`.
 
 ### Re-generating Combined HMM
 
@@ -550,13 +546,13 @@ Check that input paths in configuration files are correct and files exist.
 
 ### Log Files
 
-During runs, logs accumulate under each pipeline’s `logs/` folder and the repo root `logs/`. These directories are gitignored and safe to delete or rotate when debugging is done; see [docs/NAVIGATION.md](docs/NAVIGATION.md).
+During runs, logs accumulate under each pipeline’s `logs/` folder and the repo root `logs/`. These directories are gitignored and safe to delete or rotate when debugging is done.
 
 ---
 
 ##  Additional Resources
 
-- **Directory map (RU)**: [docs/NAVIGATION.md](docs/NAVIGATION.md)
+- **Paper chapters**: [final_final/README.md](final_final/README.md)
 - **IE_finder pipeline Details**: See `finder_pipeline/README.md`
 - **vContact Notes**: See `classification_investigation/vcontact/README.md`
 
@@ -564,14 +560,15 @@ During runs, logs accumulate under each pipeline’s `logs/` folder and the repo
 
 ##  Workflow Order
 
-Recommended execution order:
+The paper runs in this order:
 
-1. **IE_finder pipeline** - Detect and annotate MGEs
-2. **Bakta Pipeline** - Annotate MGE regions with Bakta
-3. **PADLOC Pipeline** - Detect defense systems
-4. **MGE Clustering** - Cluster MGE sequences
-5. **vContact** - Classify MGEs (requires clustered representatives)
-6. **Protein Clustering** - Cluster proteins from Bakta annotations
+1. **Discovery** (`finder_pipeline/`) — integrase, tRNA, attL, the length and coding filters, deduplication.
+2. **Atlas** (`final_final/02_atlas/`) — phage, conjugative, phage_like, or unknown.
+3. **Clustering** (`final_final/03_clustering/`) — unknown elements by protein content.
+4. **Cargo** (`final_final/04_cargo/`) — RM, TA, and the other classes on unknown elements.
+5. **Abundance** (`final_final/05_abundance/`) — the same class inside the element versus the rest of the genome.
+
+Bakta (`bakta_pipeline/`) and PADLOC (`padloc_pipeline/`) annotate the elements the atlas and the cargo chapter read. `classification_investigation/` and `protein_clusterization/` are earlier clustering lines. They are not steps 3–5.
 
 ---
 
