@@ -13,14 +13,15 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from logger import Logger
+from v3ps_filters import (
+    DEFAULT_ATTL_CANDIDATE_MIN_BP,
+    DEFAULT_ATTL_WINDOW_BP,
+    DEFAULT_SHIFT,
+    load_thresholds,
+    select_v3ps_strict_hit,
+)
 
 logger = Logger(name="annotate_mge_region", level=Logger.Level.INFO).get_logger()
-
-WINDOW_SIZE = 300_000
-"""Nucleotides searched upstream or downstream of the integrase anchor."""
-
-SHIFT = 3
-"""Maximum distance (bp) allowed between a BLAST hit and the tRNA 3-prime end."""
 
 BLAST_COLS = [
     "qseqid", "sseqid", "pident", "length", "mismatch", "gapopen",
@@ -150,13 +151,16 @@ def main(
     query_fa: str,
     out_tsv: str,
     tmp_dir: str = ".",
+    window_size: int = DEFAULT_ATTL_WINDOW_BP,
+    shift: int = DEFAULT_SHIFT,
+    min_len_bp: int = DEFAULT_ATTL_CANDIDATE_MIN_BP,
 ) -> None:
     """Run attachment-site BLAST for each integrase-tRNA query and write results.
 
     For each tRNA query in ``query_fa``, BLAST is run against a genomic window
-    around the paired integrase. Strict attachment-site filters are applied and
-    the longest passing hit is written to ``out_tsv``. All raw hits are written
-    to a sibling file with the ``_raw.tsv`` suffix.
+    around the paired integrase. The longest 3'-anchored, strand-consistent hit
+    of at least ``min_len_bp`` is written to ``out_tsv``. All raw hits are
+    written to a sibling file with the ``_raw.tsv`` suffix.
 
     Args:
         genome_fasta: Path to the sample genome FASTA file.
@@ -182,9 +186,9 @@ def main(
             continue
 
         if strand == "+":
-            window_start, window_end = trna_end, trna_end + WINDOW_SIZE
+            window_start, window_end = trna_end, trna_end + window_size
         else:
-            window_start, window_end = max(1, trna_start - WINDOW_SIZE), trna_start
+            window_start, window_end = max(1, trna_start - window_size), trna_start
 
         subject = extract_subject_region(genome_fasta, contig, window_start, window_end)
         if subject is None:
@@ -205,33 +209,29 @@ def main(
         blast_df["wstart"] = window_start
         raw_frames.append(blast_df.copy())
 
-        trna_len = len(rec.seq)
-        anchor_threshold = trna_len - SHIFT + 1
-        anchor_pass = blast_df[blast_df.qend.astype(int) >= anchor_threshold]
-        if strand == "+":
-            oriented = anchor_pass[anchor_pass.sstart.astype(int) < anchor_pass.send.astype(int)]
-        else:
-            oriented = anchor_pass[anchor_pass.sstart.astype(int) > anchor_pass.send.astype(int)]
-
-        if oriented.empty:
+        best = select_v3ps_strict_hit(blast_df, len(rec.seq), strand, shift, min_len_bp)
+        if best is None:
             logger.info(f"No strict attachment-site hits for {rec.id}")
             continue
 
-        best = oriented.loc[oriented["length"].astype(int).idxmax()]
-        hit_start = window_start + int(best.sstart) - 1
-        hit_end = window_start + int(best.send) - 1
-
+        src = blast_df[
+            (blast_df.qstart.astype(int) == best["qstart"])
+            & (blast_df.qend.astype(int) == best["qend"])
+            & (blast_df.length.astype(int) == best["best_attl_len_bp"])
+        ].iloc[0]
         filtered_records.append({
             "integrase_id": integrase_id,
             "contig": contig,
-            "hit_start": hit_start,
-            "hit_end": hit_end,
-            "pident": best.pident,
-            "length": int(best.length),
-            "evalue": best.evalue,
-            "bitscore": best.bitscore,
-            "qstart": int(best.qstart),
-            "qend": int(best.qend),
+            "hit_start": best["attL_abs_lo"],
+            "hit_end": best["attL_abs_hi"],
+            "pident": best["attL_pident"],
+            "length": best["best_attl_len_bp"],
+            "mismatch": best["attL_mismatch"],
+            "gapopen": best["attL_gapopen"],
+            "evalue": float(src.evalue),
+            "bitscore": float(src.bitscore),
+            "qstart": best["qstart"],
+            "qend": best["qend"],
         })
 
     if filtered_records:
@@ -259,5 +259,12 @@ if __name__ == "__main__":
     parser.add_argument("--query", required=True, help="mge_query.fa path.")
     parser.add_argument("--out_tsv", required=True, help="Output mge_blast.tsv path.")
     parser.add_argument("--tmp_dir", default=".", help="Temporary directory for BLAST.")
+    parser.add_argument("--config", default="ie_finder_config.yaml", help="Pipeline config.")
     cli_args = parser.parse_args()
-    main(cli_args.ffn, cli_args.integrases, cli_args.query, cli_args.out_tsv, cli_args.tmp_dir)
+    thresholds = load_thresholds(cli_args.config)
+    main(
+        cli_args.ffn, cli_args.integrases, cli_args.query, cli_args.out_tsv, cli_args.tmp_dir,
+        window_size=thresholds.attl_window_bp,
+        shift=thresholds.shift,
+        min_len_bp=thresholds.attl_candidate_min_bp,
+    )

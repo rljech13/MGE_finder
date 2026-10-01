@@ -7,7 +7,6 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-import yaml
 from Bio import SeqIO
 
 from logger import Logger
@@ -16,33 +15,11 @@ from v3ps_filters import (
     FilterThresholds,
     build_qseqid,
     evaluate_ie_candidate,
+    load_thresholds,
     parse_orfs_gff,
 )
 
 logger = Logger(name="filter_confident_ie").get_logger()
-
-
-def load_thresholds(config_path: Path | None) -> FilterThresholds:
-    """Load filter thresholds from a finder pipeline YAML configuration file.
-
-    Args:
-        config_path: Path to ``ie_finder_config.yaml``, or None to use defaults.
-
-    Returns:
-        ``FilterThresholds`` instance populated from the configuration file.
-    """
-    if config_path is None or not config_path.is_file():
-        return FilterThresholds()
-    with config_path.open() as fh:
-        cfg = yaml.safe_load(fh) or {}
-    filters = cfg.get("filters", {})
-    return FilterThresholds(
-        shift=int(filters.get("v3ps_shift", 3)),
-        attl_min_bp=int(filters.get("attl_min_bp", 15)),
-        integrase_min_aa=int(filters.get("integrase_min_aa", 300)),
-        ie_min_nt=int(filters.get("ie_min_nt", 2000)),
-        reject_ambiguous_n_ie=bool(cfg.get("reject_ambiguous_n_ie", True)),
-    )
 
 
 def closest_trna_rows(trna_path: Path) -> pd.DataFrame:
@@ -131,8 +108,20 @@ def filter_sample(
 
     ie_lengths: dict[str, int] = {}
     ie_has_n: dict[str, bool] = {}
+    ie_seqs: dict[str, str] = {}
     if mge_fa_path.is_file() and mge_fa_path.stat().st_size > 0:
         ie_lengths, ie_has_n = parse_fasta_lengths_and_n_flags(mge_fa_path)
+        for rec in SeqIO.parse(mge_fa_path, "fasta"):
+            ie_seqs[rec.id] = str(rec.seq).upper()
+
+    # attL / attR coordinates as written by extract_mge_regions.py
+    sites_path = mge_fa_path.parent / "attachment_sites.tsv"
+    sites: dict[str, pd.Series] = {}
+    if sites_path.is_file() and sites_path.stat().st_size > 0:
+        sites_df = pd.read_csv(sites_path, sep="\t")
+        if not sites_df.empty:
+            sites_df["integrase_id"] = sites_df["integrase_id"].astype(str)
+            sites = sites_df.drop_duplicates("integrase_id").set_index("integrase_id").to_dict("index")
 
     cds_by_contig = parse_orfs_gff(orfs_gff_path)
     audit_rows: list[dict] = []
@@ -175,6 +164,12 @@ def filter_sample(
                 raw_hits = pd.DataFrame()
 
         ie_id = next((k for k in ie_lengths if k.split(":")[0] == integrase_id), None)
+        attl_seq = trna_seq = ""
+        site = sites.get(integrase_id)
+        if site is not None and ie_id in ie_seqs:
+            seq = ie_seqs[ie_id]
+            attl_seq = seq[int(site["attL_start"]): int(site["attL_end"])]
+            trna_seq = seq[int(site["attR_start"]): int(site["attR_end"])]
         audit = evaluate_ie_candidate(
             integrase_id=integrase_id,
             contig=contig,
@@ -188,6 +183,8 @@ def filter_sample(
             ie_len_nt=ie_lengths.get(ie_id) if ie_id else None,
             ie_has_n=ie_has_n.get(ie_id, True) if ie_id else True,
             raw_hits=raw_hits,
+            attl_seq=attl_seq,
+            trna_seq=trna_seq,
             cds_by_contig=cds_by_contig,
             thresholds=thresholds,
         )

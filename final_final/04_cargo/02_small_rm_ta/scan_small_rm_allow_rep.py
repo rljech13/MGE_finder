@@ -1,0 +1,1 @@
+../../scripts/scan_small_rm_allow_rep.py

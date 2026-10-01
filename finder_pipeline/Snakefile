@@ -147,11 +147,13 @@ rule trna_proximity:
         proximity=os.path.join(RESULTS_DIR, "{sample}", "integrase_trna.tsv")
     log:
         os.path.join(RESULTS_DIR, "{sample}", "trna_proximity.log")
+    params:
+        max_distance=config.get("filters", {}).get("trna_max_distance_bp", 500),
     conda:
         f"{ENV}"
     shell:
         """
-        python scripts/annotate_trna_proximity.py --integrases {input.integrases} --trna {input.trna} --output {output.proximity} --max_distance 500 > {log} 2>&1
+        python scripts/annotate_trna_proximity.py --integrases {input.integrases} --trna {input.trna} --output {output.proximity} --max_distance {params.max_distance} > {log} 2>&1
         """
 
 rule extract_trna_region:
@@ -179,11 +181,13 @@ rule blast_mge:
         blast_raw=os.path.join(RESULTS_DIR, "{sample}", "mge_blast_raw.tsv"),
     log:
         os.path.join(RESULTS_DIR, "{sample}", "blast_mge.log")
+    params:
+        config=config["paths"].get("config_file", "ie_finder_config.yaml"),
     conda:
         f"{ENV}"
     shell:
         """
-        python scripts/annotate_mge_region.py --ffn {input.fna} --integrases {input.integrases} --query {input.query} --out_tsv {output.blast_tsv} --tmp_dir . > {log} 2>&1
+        python scripts/annotate_mge_region.py --ffn {input.fna} --integrases {input.integrases} --query {input.query} --out_tsv {output.blast_tsv} --tmp_dir . --config {params.config} > {log} 2>&1
         """
 
 rule extract_mge_region:
@@ -226,6 +230,10 @@ rule annotate_mge:
             --out_att {output.att} > {log} 2>&1
         """
 
+# Manuscript cascade, applied by filter_confident_ie.py from `filters` in the config:
+# exact duplication >= 8 bp, integrase > 300 aa, attL non-coding,
+# exact run >= 14 bp or BLAST length >= 17 bp (mismatches allowed), no alignment gaps.
+# dedup_ie_representatives then keeps one sequence per MMseqs cluster.
 rule filter_confident_ie:
     input:
         trna=os.path.join(RESULTS_DIR, "{sample}", "integrase_trna.tsv"),

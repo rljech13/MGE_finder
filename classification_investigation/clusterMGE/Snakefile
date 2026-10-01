@@ -6,7 +6,7 @@ import os, glob, sys, re, tempfile
 from pathlib import Path
 
 WORKDIR = Path(workflow.snakefile).parent.resolve()
-sys.path.insert(0, str(WORKDIR.parent.parent / "IE_finder" / "scripts"))
+sys.path.insert(0, str(WORKDIR.parent.parent / "finder_pipeline" / "scripts"))
 from logger import Logger as CustomLogger
 
 # Prefer `mmseqs` on PATH; set MMSEQS_BIN to override (e.g. /path/to/mmseqs).

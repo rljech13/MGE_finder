@@ -1,0 +1,1 @@
+../scripts/render_cluster_markers_table_c6960_unk.py

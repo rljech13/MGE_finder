@@ -36,7 +36,7 @@ Given one or more genome assemblies in FASTA format, the workflow:
 3. **Finds tRNAs** with Aragorn and pairs each integrase with the nearest opposite-strand tRNA within 500 bp.
 4. **BLASTs** the tRNA sequence against a genomic window around the integrase to locate the attachment site (attL).
 5. **Extracts** the putative IE sequence and writes an oriented GenBank record with attL/attR features.
-6. **Filters** candidates through the confident IE chain (V_3pS strict, attL length, intergenic attL, integrase length, IE length, no N gaps).
+6. **Filters** candidates through the manuscript cascade: exact duplication ≥ 8 bp, integrase longer than 300 aa, non-coding attL, exact run ≥ 14 bp or BLAST length ≥ 17 bp with mismatches allowed, no alignment gaps.
 7. **Deduplicates** all confident IE across samples with MMseqs2 and writes representative sequences.
 
 Two output layers exist per sample:
@@ -159,11 +159,16 @@ bins_pattern: "*.fa"
 reject_ambiguous_n: true           # skip N-containing assemblies at ingest
 reject_ambiguous_n_ie: true        # reject IE sequences containing N
 
-filters:                           # confident IE thresholds
+filters:                           # manuscript cascade, in order
+  trna_max_distance_bp: 500
   v3ps_shift: 3
-  attl_min_bp: 15
+  attl_window_bp: 300000
+  attl_candidate_min_bp: 8
+  attl_exact_min_bp: 14
+  attl_relaxed_min_bp: 17
+  attl_reject_gapped: true
   integrase_min_aa: 300
-  ie_min_nt: 2000
+  ie_min_nt: 0
 
 dedup:
   enabled: true
@@ -183,11 +188,16 @@ pfam_profiles:
 | `paths.results_dir` | Root output directory |
 | `input_sources` | Source directories for `prepare_fastas.py` |
 | `reject_ambiguous_n` | Skip assemblies with N at ingest |
-| `reject_ambiguous_n_ie` | Reject confident IE with N in extracted sequence |
+| `reject_ambiguous_n_ie` | Optional extra rejection of IE with N; off in the manuscript cascade |
+| `filters.trna_max_distance_bp` | Max distance between integrase and tRNA 3′ ends |
 | `filters.v3ps_shift` | Max distance (bp) between BLAST hit and tRNA 3′ end |
-| `filters.attl_min_bp` | Minimum attL length |
-| `filters.integrase_min_aa` | Minimum integrase length (exclusive lower bound) |
-| `filters.ie_min_nt` | Minimum extracted IE length |
+| `filters.attl_window_bp` | Genomic window searched for the attL duplication |
+| `filters.attl_candidate_min_bp` | Minimum length of the exact anchored duplication |
+| `filters.attl_exact_min_bp` | Exact-run length that passes the length gate |
+| `filters.attl_relaxed_min_bp` | BLAST length that passes the length gate; mismatches allowed |
+| `filters.attl_reject_gapped` | Reject duplications whose alignment length differs from either span |
+| `filters.integrase_min_aa` | Integrases of this length and shorter are rejected |
+| `filters.ie_min_nt` | Minimum extracted IE length; 0 disables the filter |
 | `dedup.enabled` | Run MMseqs2 deduplication after all samples complete |
 | `dedup.min_seq_id` | MMseqs2 `--min-seq-id` |
 | `dedup.min_coverage` | MMseqs2 `-c` (alignment coverage) |
@@ -271,23 +281,27 @@ snakemake dedup_ie_representatives --configfile ie_finder_config.yaml --cores 4
 
 ## Confident IE filters
 
-The confident set applies six criteria (publication stages 7_h + 8 FINAL):
+The confident set applies the manuscript filters in this order:
 
 | Step | Criterion | Where enforced |
 |------|-----------|----------------|
-| V_3pS strict | BLAST hit anchored at tRNA 3′ end (within `v3ps_shift` bp), strand-aware | `annotate_mge_region.py`, `v3ps_filters.py` |
-| attL length | Longest strict hit ≥ `attl_min_bp` | `filter_confident_ie.py` |
-| Intergenic attL | attL does not overlap any Prodigal CDS on the contig | `filter_confident_ie.py` |
-| Integrase length | Integrase ORF > `integrase_min_aa` amino acids | `filter_confident_ie.py` |
-| IE length | Extracted region ≥ `ie_min_nt` nucleotides | `filter_confident_ie.py` |
-| No N gaps | No ambiguous N in the IE sequence | `filter_confident_ie.py` |
+| tRNA proximity | Opposite strand, 3′ ends within `trna_max_distance_bp` | `annotate_trna_proximity.py` |
+| Duplication search | BLAST hit anchored at the tRNA 3′ end, within `v3ps_shift`, strand-consistent, in `attl_window_bp` | `annotate_mge_region.py` |
+| Exact duplication | Perfect run from the tRNA 3′ anchor ≥ `attl_candidate_min_bp` | `filter_confident_ie.py` |
+| Integrase length | Integrase ORF longer than `integrase_min_aa` amino acids | `filter_confident_ie.py` |
+| Non-coding attL | attL does not overlap any Prodigal CDS on the contig | `filter_confident_ie.py` |
+| attL length | Exact run ≥ `attl_exact_min_bp`, or BLAST length ≥ `attl_relaxed_min_bp` with mismatches allowed | `filter_confident_ie.py` |
+| No gaps | Alignment length equals the query span and the subject span | `filter_confident_ie.py` |
+| Deduplication | MMseqs2, `dedup.min_seq_id` / `dedup.min_coverage` | `dedup_ie_representatives.py` |
 
 Each candidate is logged in `ie_filter_audit.tsv`. Common `reject_reason` values:
 
 | Reason | Meaning |
 |--------|---------|
 | `v3ps_no_strict_hit` | No BLAST hit passed V_3pS strict criteria |
-| `attl_too_short` | Strict hit attL shorter than threshold |
+| `exact_run_too_short` | Exact anchored duplication shorter than `attl_candidate_min_bp` |
+| `attl_too_short` | attL below both the exact and the relaxed length tier |
+| `attl_gapped` | attL alignment contains gaps |
 | `cds_partial_CDS` / `cds_fully_inside_CDS` | attL overlaps a predicted CDS |
 | `integrase_too_short` | Integrase ORF below length threshold |
 | `ie_too_short` | Extracted IE below length threshold |
@@ -377,7 +391,7 @@ Unlock a stuck Snakemake directory:
 | Parameter | Location | Default |
 |-----------|----------|---------|
 | tRNA–integrase max distance | `trna_proximity` rule in `Snakefile` (`--max_distance`) | 500 bp |
-| BLAST search window | `WINDOW_SIZE` in `annotate_mge_region.py` | 300 000 bp |
+| BLAST search window | `filters.attl_window_bp` in config | 300 000 bp |
 | V_3pS shift tolerance | `filters.v3ps_shift` in config | 3 bp |
 | Pfam profiles | `pfam_profiles` in config | PF00589, PF22022 |
 

@@ -1,0 +1,1 @@
+../../scripts/scan_small_ta_allow_rep.py

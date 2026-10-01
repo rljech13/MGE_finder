@@ -10,7 +10,7 @@ import sys
 import pathlib
 
 WORKDIR = pathlib.Path(workflow.snakefile).parent.resolve()
-sys.path.insert(0, str(WORKDIR.parent.parent / "IE_finder" / "scripts"))
+sys.path.insert(0, str(WORKDIR.parent.parent / "finder_pipeline" / "scripts"))
 from logger import Logger as CustomLogger
 
 configfile: "vcontact_config.yaml"

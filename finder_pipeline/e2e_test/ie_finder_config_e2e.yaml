@@ -14,13 +14,18 @@ hybracter_pattern: "none.fasta"
 bins_pattern: "none.fa"
 
 reject_ambiguous_n: true
-reject_ambiguous_n_ie: true
+reject_ambiguous_n_ie: false
 
 filters:
+  trna_max_distance_bp: 500
   v3ps_shift: 3
-  attl_min_bp: 15
+  attl_window_bp: 300000
+  attl_candidate_min_bp: 8
+  attl_exact_min_bp: 14
+  attl_relaxed_min_bp: 17
+  attl_reject_gapped: true
   integrase_min_aa: 300
-  ie_min_nt: 2000
+  ie_min_nt: 0
 
 dedup:
   enabled: true

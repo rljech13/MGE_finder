@@ -1,0 +1,1 @@
+../../scripts/score_unknown_module_minimal.py

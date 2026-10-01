@@ -1,0 +1,520 @@
+# IE atlas-first classification config (NB7). Tune weights/thresholds here — not hardcoded in Python.
+
+priority_order:
+  # Conjugation outranks phage: a sequence with transfer machinery is not called a phage.
+  - conj.T4SS_ICE
+  - conj.IME_mobilizable
+  - conj.partial_ICE_or_CIME
+  - conj.non_T4SS_machinery
+  - conj.competence_island
+  - conj.Thermus_DSS_ICETh1_like
+  - phage.caudoviral.complete
+  - phage.inovirus_like
+  - phage.PICI_like
+  - phage.satellite_or_dependent
+  - phage.GTA_like_or_particle_like
+  - phage.cryptic_prophage_footprint
+  - mob.integrative_transposon
+  - mob.integron_like
+  - mob.IS_heavy_microisland
+  - mob.group2_intron_casposon
+  - island.PAI_like
+  - island.RM_module
+  - island.TA_rich
+  - rep.AEP_PrimPol_helicase
+  - rep.PolA_or_PolB_helicase
+  - rep.helicase_only
+  - other.unclassified_IE
+
+confidence:
+  high:
+    min_ie_core: 0.32
+    min_specialized_module: 0.38
+  medium:
+    min_ie_core: 0.22
+    min_specialized_module: 0.18
+  low:
+    default: true
+
+# Strict tailed-phage criteria: HK97 MCP (CL0373) and TerL (PF04466) are both required.
+# Without that pair the element is not called caudoviral.
+anti_phage_overcall:
+  complete_requires_terl: true
+  complete_requires_hk97_mcp: true
+  complete_requires_portal_or_mcp: false
+  complete_requires_tail_or_connector_or_baseplate: false
+  # Any caudoviral label (complete or defective) requires HK97 MCP and TerL
+  any_caudoviral_requires_hk97_mcp: true
+  any_caudoviral_requires_terl: true
+  min_caudoviral_ie_nt: 10000
+  forbid_conjugation_markers: true
+  conjugation_block_min_score: 0.11
+  # Packaging hits alone (TerL/TerS) without HK97 MCP stay cryptic/GTA, not caudoviral
+  packaging_alone_max_primary: phage.cryptic_prophage_footprint
+  packaging_alone_cap_confidence: medium
+  min_distinct_phage_marker_categories_for_complete: 1
+
+signal_balance:
+  runner_up_k: 3
+  keep_non_primary_marker_genes: true
+
+# Short IE: score = sum of weights of UNIQUE module markers / sum_scale (CDS count is not a penalty).
+# gene_damped is the previous logic, dividing by sqrt(n_genes).
+# sum_scale was raised slightly after the marker reweight (coarse taxonomy: caudo/ino/conj/rep/uncl).
+score_aggregation:
+  mode: marker_sum
+  sum_scale: 1.22
+  ie_core_boost: 1.12
+  max_score_cap: 1.0
+  aice_dss_mix_aice: 1.0
+  aice_dss_mix_dss: 0.3
+  aice_dss_mix_repabc: 0.2
+
+novel_outlier_criteria:
+  min_ie_core_unclassified: 0.35
+  min_annotation_coverage: 0.4
+  min_annotation_coverage_for_weak_module_novel: 0.35
+  max_host_contam_for_novel: 0.55
+  min_module_score_conflict: 0.35
+  conflict_labels_min: 2
+  all_specialized_below: 0.22
+  high_interest_tier_if:
+    min_ie_core: 0.45
+    max_top_specialized: 0.35
+
+synteny:
+  window_genes: 8
+
+module_markers:
+  integrase:
+    pfam: [PF00589, PF02899, PF07583, PF13666]
+    regex: [integrase, recombinase, tyrosine recombinase, site-specific]
+    weight: 0.54
+    category: IE_core
+  terl:
+    pfam: [PF04466, PF03237, PF05176]
+    regex: [terminase large, terminase subunit A, packaging protein gp2]
+    weight: 0.50
+    category: phage_packaging
+  hk97_mcp:
+    # Pfam clan CL0373 (phage-coat / HK97-fold MCP); encapsulin families PF04454 and PF08967 are excluded
+    pfam: [PF03864, PF04668, PF04965, PF05065, PF05125, PF07068, PF11651, PF17236]
+    regex: [HK97, major capsid protein, phage capsid, head protein gp23]
+    weight: 0.54
+    category: phage_head
+  ters:
+    pfam: [PF11025]
+    regex: [terminase small, terminase subunit B]
+    weight: 0.35
+    category: phage_packaging
+  portal:
+    pfam: [PF05133, PF06120]
+    regex: [portal protein, connector, phage head, prohead protease]
+    weight: 0.54
+    category: phage_head
+  mcp:
+    # Accessory structural marker (adds to the score; it does not replace hk97_mcp)
+    pfam: [PF03864, PF04668, PF05065, PF04965, PF05125, PF07068, PF11651]
+    regex: [major capsid, capsid protein, HK97, head protein]
+    weight: 0.30
+    category: phage_head
+  tail:
+    pfam: [PF06906, PF05269, PF06841, PF05880, PF05984]
+    regex: [tail protein, tape measure, tail tube, baseplate, tail fiber, base plate]
+    weight: 0.54
+    category: phage_tail
+  connector:
+    regex: [head-tail adaptor, head-tail adapter, head completion, scaffold]
+    weight: 0.44
+    category: phage_connector
+  lysis:
+    pfam: [PF04517, PF04945, PF11718]
+    regex: [holin, endolysin, lysin, muramidase, amidase, spanin]
+    weight: 0.34
+    category: phage_lysis
+  phage_reg:
+    regex: [repressor, cro, antirepressor, excisionase, xis\\b]
+    weight: 0.24
+    category: phage_reg
+  relaxase:
+    pfam: [PF03432, PF01028]
+    regex: [relaxase, MobA|mobA, TraI|trai, VirD2, conjugative transfer]
+    weight: 0.54
+    category: conjugation
+  t4cp:
+    pfam: [PF12696, PF02523]
+    regex: [coupling protein, VirD4, TraD, TrwB, TcpA, type IV secretion coupling]
+    weight: 0.54
+    category: conjugation
+  virb4:
+    pfam: [PF00437]
+    regex: [VirB4, TraU, type IV secretion system protein VirB]
+    weight: 0.54
+    category: conjugation
+  mpf:
+    pfam: [PF06400, PF07913, PF05970, PF05685]
+    regex: [VirB11, TrbB, VirB6, VirB8, VirB9, VirB10, VirB2, pilin, conjugal transfer Trb]
+    weight: 0.30
+    category: conjugation
+  inov_zot:
+    pfam: [PF05707]
+    regex: [\\bZot\\b, zonula occludens toxin]
+    weight: 0.55
+    category: inovirus
+  inov_rcr:
+    # RCR endonuclease / filamentous-phage replication protein (secondary marker)
+    pfam: [PF01051, PF01751, PF13408]
+    regex:
+      - RCR
+      - "rolling.?circle"
+      - replication protein pII
+      - HUH endonuclease
+      - filamentous phage replication
+    weight: 0.40
+    category: inovirus
+  inov_rep:
+    regex:
+      - RstA
+      - "replication initiation.*filamentous"
+      - pII
+      - filamentous phage replication
+    weight: 0.35
+    category: inovirus
+  inov_ssb:
+    regex: [RstC, ssDNA-binding, pV filamentous, single-strand DNA-binding]
+    weight: 0.30
+    category: inovirus
+  inov_coat:
+    regex: [pVIII, major coat, pIII minor coat, pVI, pVII, pIX, filamentous coat]
+    weight: 0.30
+    category: inovirus
+  inov_assembly:
+    regex:
+      - "pil.*secretin"
+      - "secretin"
+      - "Ace"
+      - "pXI"
+      - "filamentous assembly"
+    weight: 0.25
+    category: inovirus
+  ftsk_traB:
+    pfam: [PF01504, PF12470]
+    regex: [FtsK, SpoIIIE, TraB, DNA translocase, SMC-like]
+    weight: 0.52
+    category: AICE
+  tdtA_like:
+    regex: [TdtA, thermus DSS, ICETh1]
+    weight: 0.52
+    category: DSS
+  repABC:
+    pfam: [PF07062, PF01051]
+    regex: [RepA|RepB|RepC|RepSA|RepAM|replication initiation protein.*plasmid]
+    weight: 0.48
+    category: replication
+  nurA:
+    regex: [NurA, nuclease.*Archaea]
+    weight: 0.416
+    category: DSS
+  rm:
+    pfam: [PF01420, PF00565, PF08874]
+    regex: [restriction endonuclease, methyltransferase, type II R-M]
+    weight: 0.312
+    category: DSS
+  ccr:
+    regex: [ccrA|ccrB|ccrC, cassette chromosome]
+    weight: 0.53
+    category: SCC
+  cch:
+    regex: [\\bCch\\b, helicase.*SCC, MCM.*SCC]
+    weight: 0.48
+    category: SCC
+  cch2:
+    regex: [Cch2, helicase Cch2]
+    weight: 0.48
+    category: SCC
+  ccpol:
+    regex: [CCPol, PolA-like, ccr.*pol]
+    pfam: [PF00136, PF00698]
+    weight: 0.48
+    category: SCC
+  mp_partner:
+    regex: [\\bMP\\b.*SCC|partner protein MP|LP1413]
+    weight: 0.35
+    category: SCC
+  ssb:
+    regex: [SSB, single-strand binding, LP1413-like]
+    weight: 0.28
+    category: replication
+  primpol_aep:
+    pfam: [PF13377, PF08724, PF01652]
+    regex: [PrimPol, AEP, Prim-Pol, archaeo-eukaryotic primase]
+    weight: 0.54
+    category: replication
+  dna_pol_a:
+    pfam: [PF00476]
+    regex: [DNA polymerase I, PolA, family A polymerase]
+    weight: 0.54
+    category: replication
+  dna_pol_b:
+    pfam: [PF00136]
+    regex: [DNA polymerase II|III|B-type, PolB]
+    weight: 0.54
+    category: replication
+  helicase:
+    pfam: [PF00176, PF00270, PF00271, PF06779, PF10410]
+    regex:
+      - helicase
+      - DNA helicase
+      - SF1|SF2|SF3
+      - MCM|DnaB-like
+      - AAA.?ATPase
+    weight: 0.43
+    category: replication
+  par_partition:
+    regex: [ParA|ParB|SopA|SopB, partition protein]
+    pfam: [PF16673, PF16672]
+    weight: 0.364
+    category: plasmid
+  ta_system:
+    pfam: [PF01637, PF12704]
+    regex: [toxin-antitoxin, addiction module]
+    weight: 0.26
+    category: plasmid
+  ribosomal:
+    regex: [ribosomal protein, 30S ribos, 50S ribos, rpsL|rpl]
+    weight: 0.52
+    category: host
+  metabolic:
+    regex: [dehydrogenase, synthase.*chromosomal, enolase, pyruvate kinase, glycolysis]
+    weight: 0.156
+    category: host
+  pici_cpt:
+    pfam: [PF04658]
+    regex: [\\bCpt\\b, PICI, phage capsid targeting, capsid targeting protein]
+    weight: 0.48
+    category: PICI
+  gta_marker:
+    regex: [gene transfer agent, \\bGTA\\b, head morphogenesis.*capsid, capsid protein.*GTA]
+    weight: 0.42
+    category: satellite
+  satellite_p4:
+    pfam: [PF01545]
+    regex: [satellite phage, P4 phage, SaPI, satellite.*nickase, dependent phage]
+    weight: 0.42
+    category: satellite
+  tn3_resolvase:
+    pfam: [PF02769, PF07517]
+    regex: [resolvase, Tn3, serine recombinase, invertible]
+    weight: 0.45
+    category: mobilome
+  tn_transposase:
+    pfam: [PF01609, PF00665]
+    regex: [transposase, Tn7, TnsA|TnsB|TnsC|TnsD, Tn3 family]
+    weight: 0.42
+    category: mobilome
+  is_transposase:
+    pfam: [PF01609, PF13359, PF03111, PF01498]
+    regex: [insertion sequence, IS element, IS\\d+, IS transposase]
+    weight: 0.38
+    category: IS
+  inti_integron:
+    regex: [IntI\\d*, integron integrase, class 1 integron, integron recombinase]
+    weight: 0.50
+    category: mobilome
+  attc_integron:
+    regex: [attC, cassette.*integron, 59-be, integron cassette]
+    weight: 0.35
+    category: mobilome
+  pai_virulence:
+    pfam: [PF03524, PF03525]
+    regex: [pathogenicity island, virulence factor, adhesin, type III secretion, T3SS, autotransporter]
+    weight: 0.40
+    category: PAI
+  com_ea:
+    regex: [ComEA, ComEB, ComEC, ComGD, competence protein Com]
+    weight: 0.48
+    category: competence
+  com_machinery:
+    regex: [ComGA|ComGB|ComGC|ComGE|ComGF|ComGG|comFA|comFC|comK|comX]
+    weight: 0.45
+    category: competence
+  rm_island:
+    pfam: [PF01420, PF00565, PF08874]
+    regex: [restriction endonuclease, methyltransferase, type I R-M, type II R-M, type III R-M]
+    weight: 0.35
+    category: RM_island
+  ta_rich:
+    pfam: [PF01637, PF12704, PF02955]
+    regex: [toxin-antitoxin, addiction module, HigB|RelE|Phd.*Doc|VapBC]
+    weight: 0.30
+    category: TA_island
+  group2_rt:
+    pfam: [PF00078, PF05205]
+    regex: [group II intron, reverse transcriptase.*intron, maturase, intron-encoded]
+    weight: 0.48
+    category: mobilome
+  casposon:
+    pfam: [PF08738]
+    regex: [casposon, cas1.*casposon]
+    weight: 0.45
+    category: mobilome
+  conj_tad:
+    regex: [Tad pilus, rcpA, flp pilus, tight adherence, TadA|TadB|TadC]
+    weight: 0.45
+    category: conj_non_t4ss
+  conj_t4ap:
+    regex: [type IVa pilus, T4aP, pilB.*secretion, pilC.*secretion]
+    weight: 0.42
+    category: conj_non_t4ss
+  genomad_provirus:
+    regex: [geNomad provirus, geNomad virus]
+    weight: 0.44
+    category: satellite
+  virsorter_viral:
+    regex: [VirSorter viral, VirSorter2]
+    weight: 0.42
+    category: satellite
+
+secondary_flag_triggers:
+  has_phage_markers:
+    min_phage_module: 0.12
+  has_conjugation_markers:
+    min_conjugation_module: 0.12
+  has_replication_module:
+    min_replication_module: 0.15
+  has_plasmid_maintenance:
+    min_plasmid_module: 0.15
+
+label_rules:
+  phage.caudoviral.complete:
+    requires_antiphage_structural: true
+    min_phage_score: 0.20
+    min_ie_core: 0.15
+    require_hk97_mcp: true
+    require_terl: true
+    min_ie_len_nt: 10000
+  phage.inovirus_like:
+    min_inovirus_score: 0.20
+    require_zot: true
+    min_distinct_inov_markers: 1
+    max_ie_len_nt: 20000
+    min_ie_core: 0.12
+  phage.PICI_like:
+    min_pici_score: 0.18
+    min_ie_core: 0.12
+    require_integrase: true
+    require_phage_reg_or_cpt: true
+    min_phage_reg_hits: 2
+  phage.GTA_like_or_particle_like:
+    min_phage_score: 0.14
+    min_gta_score: 0.12
+    max_terl_structural: true
+    min_ie_core: 0.12
+  phage.satellite_or_dependent:
+    min_satellite_score: 0.22
+    min_phage_score: 0.08
+    max_ie_len_nt: 15000
+    min_ie_core: 0.10
+  phage.cryptic_prophage_footprint:
+    min_phage_score: 0.10
+    min_ie_core: 0.10
+    require_integrase: true
+    max_phage_categories: 2
+  conj.T4SS_ICE:
+    min_conjugation_score: 0.27
+    require_relaxase_t4cp_virb4: true
+    min_ie_core: 0.18
+  conj.IME_mobilizable:
+    min_conjugation_score: 0.21
+    require_relaxase: true
+    forbid_virb4_strong: true
+    virb4_strong_threshold: 0.3
+    defer_if_primpol_helicase_synteny: true
+    min_replication_to_defer_ime: 0.25
+    min_ie_core: 0.15
+  conj.partial_ICE_or_CIME:
+    min_conjugation_score: 0.11
+    partial_signature: true
+  conj.non_T4SS_machinery:
+    min_conj_non_t4ss_score: 0.24
+    max_conjugation_score: 0.55
+    min_ie_core: 0.12
+    require_integrase_or_ie: true
+  conj.competence_island:
+    min_competence_score: 0.28
+    min_ie_core: 0.12
+    require_integrase_or_com: true
+  conj.Thermus_DSS_ICETh1_like:
+    min_dss_score: 0.35
+    min_ie_core: 0.12
+  mob.integrative_transposon:
+    min_mobilome_score: 0.24
+    min_ie_core: 0.10
+    require_transposon_signature: true
+    max_conjugation_score: 0.45
+    defer_if_is_hits: 2
+  mob.integron_like:
+    min_mobilome_score: 0.20
+    min_ie_core: 0.10
+    require_integron_signature: true
+  mob.IS_heavy_microisland:
+    min_is_score: 0.22
+    max_ie_len_nt: 6000
+    min_is_hits: 2
+    min_ie_core: 0.08
+    max_replication_score: 0.45
+  mob.group2_intron_casposon:
+    min_mobilome_score: 0.30
+    min_ie_core: 0.08
+    require_group2_or_casposon: true
+  island.PAI_like:
+    min_pai_score: 0.22
+    min_ie_core: 0.12
+    require_integrase: true
+    max_conjugation_score: 0.40
+    max_phage_score: 0.55
+  island.RM_module:
+    min_rm_island_score: 0.22
+    min_ie_core: 0.10
+    require_integrase: true
+    max_replication_score: 0.40
+    max_conjugation_score: 0.40
+  island.TA_rich:
+    min_ta_island_score: 0.22
+    min_ie_core: 0.10
+    require_integrase: true
+    max_replication_score: 0.35
+  rep.AEP_PrimPol_helicase:
+    min_replication_pair_score: 0.27
+    require_helicase_near_primpol_window: true
+    max_phage_structural: 0.55
+    max_conjugation_score: 0.92
+    min_ie_core: 0.12
+  rep.PolA_or_PolB_helicase:
+    min_pol_helicase_score: 0.27
+    max_phage_structural: 0.55
+    max_conjugation_score: 0.92
+    min_ie_core: 0.12
+  rep.helicase_only:
+    min_helicase_only_score: 0.17
+    forbid_pol: true
+    max_phage_structural: 0.55
+    max_conjugation_score: 0.92
+    min_ie_core: 0.12
+  other.unclassified_IE:
+    fallback: true
+
+# Derived module score keys (computed in code from categories)
+specialized_modules_for_novel_filter:
+  - phage_score
+  - inovirus_score
+  - conjugation_score
+  - AICE_DSS_score
+  - replication_score
+  - plasmid_score
+  - pici_score
+  - mobilome_score
+  - island_module_score
+  - competence_score
+  - gta_score
+  - satellite_score
