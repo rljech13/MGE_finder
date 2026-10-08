@@ -106,6 +106,26 @@ class TestV3psStrict(unittest.TestCase):
         self.assertFalse(audit["passed_confident"])
         self.assertEqual(audit["reject_reason"], "attl_too_short")
 
+    def test_minus_strand_repeat_is_read_from_the_assembly(self):
+        # The cut-out island starts at hit_end, so its attL slice is not the hit.
+        # Coordinates: attL 100-146, tRNA 200-274 on the minus strand.
+        match = "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACG"
+        contig = ["N"] * 300
+        contig[99:146] = list(match)
+        contig[199:274] = list(match + "N" * (75 - len(match)))
+        raw = pd.DataFrame([{
+            "qseqid": "i1:c1:200-274:-", "qstart": 25, "qend": 75,
+            "sstart": 146, "send": 100, "length": 47, "mismatch": 1, "gapopen": 0,
+            "pident": 98, "wstart": 1,
+        }])
+        audit = _audit(
+            raw, trna_start=200, trna_end=274, trna_strand="-", trna_len=75,
+            attl_seq="AAAA", trna_seq="TTTT", contig_seq="".join(contig),
+        )
+        self.assertEqual(audit["exact_anchored_bp"], 47)
+        self.assertTrue(audit["passed_candidate"])
+        self.assertNotEqual(audit["reject_reason"], "exact_run_too_short")
+
     def test_gapped_alignment_rejected(self):
         audit = _audit(_raw(gapped=True))
         self.assertFalse(audit["passed_confident"])
