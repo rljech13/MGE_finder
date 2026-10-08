@@ -4,9 +4,9 @@ The repository root is the directory that contains ``finder_pipeline/Snakefile``
 found by walking up from this file. Scripts keep working when they are started
 through a link in ``final_final/02_atlas``, ``03_clustering``, ``04_cargo`` or ``05_abundance``.
 
-External databases and HMMER binaries can be overridden:
+HMMER binaries are taken from ``PATH``, or from MGE_HMMSEARCH, MGE_HMMFETCH,
+MGE_HMMPRESS, MGE_HMMSTAT. Databases are only read from the environment:
 
-  MGE_HMMSEARCH, MGE_HMMFETCH, MGE_HMMPRESS, MGE_HMMSTAT
   MGE_PFAM, MGE_PADLOC_HMM, MGE_DEFENSE_FINDER, MGE_CASFINDER
 """
 from __future__ import annotations
@@ -37,26 +37,20 @@ def tool(name: str, *fallbacks: str) -> Path:
     return Path(name)
 
 
-def data_file(env: str, *candidates: str) -> Path:
+def data_file(env: str) -> Path | None:
+    """Database path from the environment. Nothing is assumed about this machine."""
     chosen = os.environ.get(env)
-    if chosen:
-        return Path(chosen)
-    for candidate in candidates:
-        if Path(candidate).exists():
-            return Path(candidate)
-    if not candidates:
-        raise SystemExit(f"{env} is not set and no default path was given")
-    return Path(candidates[0])
+    return Path(chosen) if chosen else None
 
 
 REPO = repo_root()
 FF = REPO / "final_final"
 
-HMMSEARCH = tool("hmmsearch", "/home/lam34/miniforge3/envs/MGE_finder/bin/hmmsearch")
-HMMFETCH = tool("hmmfetch", "/home/lam34/miniforge3/envs/MGE_finder/bin/hmmfetch")
-HMMPRESS = tool("hmmpress", "/home/lam34/miniforge3/envs/MGE_finder/bin/hmmpress")
-HMMSTAT = tool("hmmstat", "/home/lam34/miniforge3/envs/MGE_finder/bin/hmmstat")
-PFAM = data_file("MGE_PFAM", "/home/lam34/bakta_db/db/pfam.h3m")
-PADLOC = data_file("MGE_PADLOC_HMM", "/home/lam34/miniforge3/envs/padloc/data/hmm/padlocdb.hmm")
-DF = data_file("MGE_DEFENSE_FINDER", "/home/lam34/.macsyfinder/models/defense-finder-models/profiles")
-CAS = data_file("MGE_CASFINDER", "/home/lam34/.macsyfinder/models/CasFinder/profiles")
+HMMSEARCH = tool("hmmsearch")
+HMMFETCH = tool("hmmfetch")
+HMMPRESS = tool("hmmpress")
+HMMSTAT = tool("hmmstat")
+PFAM = data_file("MGE_PFAM")
+PADLOC = data_file("MGE_PADLOC_HMM")
+DF = data_file("MGE_DEFENSE_FINDER")
+CAS = data_file("MGE_CASFINDER")

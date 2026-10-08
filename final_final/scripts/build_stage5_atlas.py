@@ -17,10 +17,13 @@ NB7 = REPO / "results_organized/genome_clustering/project/notebook7_extended"
 
 PATH_S5 = ART / "stage5_attL_lengths.tsv"
 PATH_FULL = NB7 / "ie_instance_classification_full25591_strict.tsv"
-PATH_TRUTH = Path(os.environ.get(
-    "MGE_INTEGRAS_TRUTH",
-    "/home/lam34/mge_integrase_trna_phylo/data/processed/integrase_truth_table.tsv",
-))
+_truth = os.environ.get("MGE_INTEGRAS_TRUTH")
+if not _truth:
+    raise SystemExit(
+        "MGE_INTEGRAS_TRUTH is not set. Point it at the integrase truth table, "
+        "or run atlas_pipeline/classify_cohort.py with --truth."
+    )
+PATH_TRUTH = Path(_truth)
 PATH_REP = REPO / "results_organized/merged_deduplicated/rep_index.tsv"
 PATH_LOCUS = NB7 / "locus_eggnog_merged.tsv"
 PATH_CFG = FF / "02_atlas" / "ie_classifier" / "ie_atlas_labels.yaml"

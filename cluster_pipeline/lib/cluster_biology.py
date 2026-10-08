@@ -30,8 +30,17 @@ from scipy.sparse import csr_matrix, load_npz
 # Paths. Pfam tables used by the current unknown clustering live under
 # final_final/03_clustering/reference. The other names below belonged to the
 # retired notebook and are kept so older callers still resolve a path.
+# The root is this repository, wherever it is checked out.
 
-REPO = Path("/home/lam34/MGE_finder").resolve()
+def _repo_root() -> Path:
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "finder_pipeline" / "Snakefile").is_file():
+            return parent
+    raise SystemExit(f"repository root not found above {here}")
+
+
+REPO = _repo_root()
 NB3_BASE = REPO / "final_final" / "03_clustering"
 NB3_OUT = NB3_BASE / "reference"
 ROOT_ORG = REPO / "results_organized"

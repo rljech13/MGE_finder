@@ -1,6 +1,6 @@
 # IE_finder
 
-IE_finder finds integrative elements in prokaryotic genomes and then follows one element through the analyses in the paper. Discovery is a Snakemake workflow. Everything after the cohort is a numbered chapter under `final_final/`.
+IE_finder finds integrative elements in prokaryotic genomes and then follows one element through the analyses in the paper. Discovery is a Snakemake workflow, because it repeats the same steps on every genome. Classification and clustering of the unknown class each run once on the cohort, so they are Python packages. `final_final/` keeps the paper order and the tables.
 
 A confident element is a phage-type tyrosine integrase next to an opposite-strand tRNA, with a direct repeat of that tRNA 3′ end, an integrase longer than 300 aa, a non-coding attL, and a site that is either an exact repeat of at least 14 bp or a BLAST hit of at least 17 bp. Gapped alignments are dropped, then MMseqs2 keeps one representative at identity 0.9 and coverage 0.8. The frozen cohort after that step is 6,960 elements. The filter code is `finder_pipeline/scripts/v3ps_filters.py`. How to run it is in [finder_pipeline/README.md](finder_pipeline/README.md).
 
@@ -11,7 +11,9 @@ Tables, figures, genome trees, and HMM databases stay on disk. They are not part
 | directory | what it does |
 |---|---|
 | `finder_pipeline/` | Discovery. Prodigal, HMMER (PF00589, PF22022), Aragorn, BLAST for attL, the cascade above, then MMseqs2. Config: `ie_finder_config.yaml`. |
-| `final_final/` | The paper after the cohort. Chapters `01`–`05` below. Shared code is in `final_final/scripts/`. Written tables and figures stay in `artifacts/` and `figures/` and are not committed. |
+| `atlas_pipeline/` | Classification of a cohort you pass in. Rules: `ie_classifier/ie_atlas_labels.yaml`. Command: `classify_cohort.py`. |
+| `cluster_pipeline/` | Clustering of one class from that table. Jaccard, k-nearest neighbours, Leiden. Command: `cluster_cohort.py`. |
+| `final_final/` | Paper order and the tables the pipelines write. Chapters `01`–`05` below. Shared helpers stay in `final_final/scripts/`. `artifacts/` and `figures/` are not committed. |
 | `bakta_pipeline/` | Bakta annotation of the extracted elements. |
 | `padloc_pipeline/` | PADLOC defense-system search on those elements. |
 | `classification_investigation/` | Earlier nucleotide clustering (`clusterMGE/`, MMseqs) and vContact classification. Separate from the unknown-element Leiden clustering in chapter 3. |
@@ -33,8 +35,8 @@ The numbers are the order of the paper. Each chapter's own README says which scr
 | chapter | directory | what it answers |
 |---|---|---|
 | 1 | `final_final/01_discovery/` | How a genome becomes the confident cohort. The workflow itself is `finder_pipeline/`. |
-| 2 | `final_final/02_atlas/` | How an element is labelled phage, conjugative, phage_like, or unknown. The rule package is `ie_classifier/`. |
-| 3 | `final_final/03_clustering/` | How unknown elements group by protein content. Jaccard, 15-nearest neighbours, Leiden. |
+| 2 | `atlas_pipeline/` | How an element is labelled phage, conjugative, phage_like, or unknown. Chapter notes: `final_final/02_atlas/`. |
+| 3 | `cluster_pipeline/` | How elements of one class group by protein content. Chapter notes: `final_final/03_clustering/`. |
 | 4 | `final_final/04_cargo/` | Which functions sit on unknown elements: RM, TA, the other literature classes, and a minimal module. |
 | 5 | `final_final/05_abundance/` | Whether a class is more common inside the element than in the rest of the same genome. |
 
@@ -563,8 +565,8 @@ During runs, logs accumulate under each pipeline’s `logs/` folder and the repo
 The paper runs in this order:
 
 1. **Discovery** (`finder_pipeline/`) — integrase, tRNA, attL, the length and coding filters, deduplication.
-2. **Atlas** (`final_final/02_atlas/`) — phage, conjugative, phage_like, or unknown.
-3. **Clustering** (`final_final/03_clustering/`) — unknown elements by protein content.
+2. **Atlas** (`atlas_pipeline/`) — phage, conjugative, phage_like, or unknown.
+3. **Clustering** (`cluster_pipeline/`) — unknown elements by protein content.
 4. **Cargo** (`final_final/04_cargo/`) — RM, TA, and the other classes on unknown elements.
 5. **Abundance** (`final_final/05_abundance/`) — the same class inside the element versus the rest of the genome.
 

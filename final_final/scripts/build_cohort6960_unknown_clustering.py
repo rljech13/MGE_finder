@@ -53,6 +53,7 @@ from cohort6960_unknown_paths import (  # noqa: E402
     PATH_SAMPLES_META,
     PATH_TRUTH,
     PATH_X,
+    FF,
     REPO,
     TAG,
     ensure_dirs,
@@ -670,9 +671,6 @@ def write_report(
     lines.append(f"Figures: `figures/04_cluster_unknown_6960/`\n")
     (FIG / "REPORT.md").write_text("\n".join(lines))
     print(f"→ {FIG / 'REPORT.md'}")
-
-
-FF = Path("/home/lam34/MGE_finder/final_final")
 
 
 def main() -> None:
